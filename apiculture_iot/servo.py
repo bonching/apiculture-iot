@@ -26,4 +26,5 @@ try:
         sleep(1)
 except KeyboardInterrupt:
     servo.angle = 0  # Stop on exit
+    servo.close()
     print("\nStopped.")
