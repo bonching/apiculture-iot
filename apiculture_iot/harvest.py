@@ -158,7 +158,7 @@ def broadcast_status_update(device, status):
         'device': device,
         'status': status,
         'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
-    }, broadcast=True)
+    }, namespace='/')
 
 
 
