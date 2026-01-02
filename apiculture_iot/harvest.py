@@ -339,7 +339,8 @@ def handle_needle_servo_rotate(data):
         if duration and duration > 0 and direction != 'stop':
             def auto_stop():
                 time.sleep(float(duration))
-                needle_servo.angle = 0
+                # needle_servo.angle = 0
+                needle_servo.detach()
                 with state_lock:
                     needle_servo_state['angle'] = 0
                     needle_servo_state['mode'] = 'stopped'
