@@ -76,7 +76,7 @@ SMOKER_PIN = 17
 PUMP_PIN = 27
 
 # Initialize Devices
-# needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=0)
 # pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
 # sliding_motor = Motor(forward=SLIDING_MOTOR_FORWARD_PIN, backward=SLIDING_MOTOR_BACKWARD_PIN, enable=SLIDING_MOTOR_ENABLE_PIN)
 # extruding_motor = Motor(forward=EXTRUDING_MOTOR_FORWARD_PIN, backward=EXTRUDING_MOTOR_BACKWARD_PIN, enable=EXTRUDING_MOTOR_ENABLE_PIN)
@@ -268,12 +268,13 @@ def handle_needle_servo_angle(data):
         # needle_servo.angle = 0
         # needle_servo.close()
         # time.sleep(5)
-        needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=0)
+
+        # needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=0)
         needle_servo.angle = angle
-        time.sleep(1)
+        # time.sleep(1)
         # needle_servo.angle = 0
-        needle_servo.close()
-        time.sleep(5)
+        # needle_servo.close()
+        # time.sleep(5)
 
         with state_lock:
             needle_servo_state['angle'] = angle
@@ -311,7 +312,7 @@ def handle_needle_servo_rotate(data):
             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'needle_servo'})
             return
 
-        needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=0)
+        # needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=0)
         if direction == 'forward':
             needle_servo.angle = 180
             angle = 180
