@@ -277,6 +277,12 @@ def handle_needle_servo_angle(data):
         # needle_servo.close()
         # time.sleep(5)
 
+        def detach_after_move():
+            time.sleep(0.5)
+            needle_servo.detach()
+
+        threading.Thread(target=detach_after_move, daemon=True).start()
+
         with state_lock:
             needle_servo_state['angle'] = angle
             needle_servo_state['mode'] = 'positioned'
