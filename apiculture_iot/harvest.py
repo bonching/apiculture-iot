@@ -38,6 +38,7 @@ Websocket Events:
     - connected - Connection established
 """
 import subprocess
+import sys
 import traceback
 
 from flask import Flask, request
@@ -936,7 +937,17 @@ def cleanup():
 
 if __name__ == '__main__':
     import atexit
+    import signal
+
     atexit.register(cleanup)
+
+    def signal_handler(signal, frame):
+        print('Shutting down...')
+        cleanup()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     print("\n\n\n")
     print("=" * 60)
