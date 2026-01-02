@@ -257,15 +257,21 @@ def handle_needle_servo_angle(data):
 
         angle = float(data['angle'])
 
-        # if angle < -180 or angle > 180:
-        #     emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees'})
-        #     return
+        if angle < -180 or angle > 180:
+            emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees'})
+            return
 
-        needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-90, max_angle=90, initial_angle=None)
-        needle_servo.angle = 45
-        print("sleeping for : ", round(angle / 235, 2))
-        time.sleep(round(angle / 235, 2))
-        needle_servo.angle = 0
+        # needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-90, max_angle=90, initial_angle=None)
+        # needle_servo.angle = 45
+        # print("sleeping for : ", round(angle / 235, 2))
+        # time.sleep(round(angle / 235, 2))
+        # needle_servo.angle = 0
+        # needle_servo.close()
+        # time.sleep(5)
+        needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+        needle_servo.angle = angle
+        time.sleep(1)
+        needle_servo.angle = None
         needle_servo.close()
         time.sleep(5)
 
@@ -302,18 +308,19 @@ def handle_needle_servo_rotate(data):
             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'needle_servo'})
             return
 
-        # if direction == 'forward':
-        #     needle_servo.angle = 180
-        #     angle = 180
-        # elif direction == 'reverse':
-        #     needle_servo.angle = -180
-        #     angle = -180
-        # else:
-        #     needle_servo.angle = 0
-        #     angle = 0
+        needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+        if direction == 'forward':
+            needle_servo.angle = 180
+            angle = 180
+        elif direction == 'reverse':
+            needle_servo.angle = -180
+            angle = -180
+        else:
+            needle_servo.angle = 0
+            angle = 0
 
         with state_lock:
-            # needle_servo_state['angle'] = angle
+            needle_servo_state['angle'] = angle
             needle_servo_state['mode'] = direction
             needle_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -321,7 +328,7 @@ def handle_needle_servo_rotate(data):
         if duration and duration > 0 and direction != 'stop':
             def auto_stop():
                 time.sleep(float(duration))
-                # needle_servo.angle = 0
+                needle_servo.angle = 0
                 with state_lock:
                     needle_servo_state['angle'] = 0
                     needle_servo_state['mode'] = 'stopped'
