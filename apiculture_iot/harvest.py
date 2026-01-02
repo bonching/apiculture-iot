@@ -268,7 +268,7 @@ def handle_needle_servo_angle(data):
         # needle_servo.angle = 0
         # needle_servo.close()
         # time.sleep(5)
-        needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-90, max_angle=90)
+        needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=0)
         needle_servo.angle = angle
         time.sleep(1)
         # needle_servo.angle = 0
@@ -311,7 +311,7 @@ def handle_needle_servo_rotate(data):
             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'needle_servo'})
             return
 
-        needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+        needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=0)
         if direction == 'forward':
             needle_servo.angle = 180
             angle = 180
