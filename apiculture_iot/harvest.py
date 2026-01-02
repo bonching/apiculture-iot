@@ -76,7 +76,7 @@ SMOKER_PIN = 17
 PUMP_PIN = 27
 
 # Initialize Devices
-needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-90, max_angle=90)
+# needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
 # pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
 # sliding_motor = Motor(forward=SLIDING_MOTOR_FORWARD_PIN, backward=SLIDING_MOTOR_BACKWARD_PIN, enable=SLIDING_MOTOR_ENABLE_PIN)
 # extruding_motor = Motor(forward=EXTRUDING_MOTOR_FORWARD_PIN, backward=EXTRUDING_MOTOR_BACKWARD_PIN, enable=EXTRUDING_MOTOR_ENABLE_PIN)
@@ -258,7 +258,7 @@ def handle_needle_servo_angle(data):
             emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees'})
             return
 
-        needle_servo.angle = angle
+        # needle_servo.angle = angle
 
         with state_lock:
             needle_servo_state['angle'] = angle
@@ -293,18 +293,18 @@ def handle_needle_servo_rotate(data):
             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'needle_servo'})
             return
 
-        if direction == 'forward':
-            needle_servo.angle = 180
-            angle = 180
-        elif direction == 'reverse':
-            needle_servo.angle = -180
-            angle = -180
-        else:
-            needle_servo.angle = 0
-            angle = 0
+        # if direction == 'forward':
+        #     needle_servo.angle = 180
+        #     angle = 180
+        # elif direction == 'reverse':
+        #     needle_servo.angle = -180
+        #     angle = -180
+        # else:
+        #     needle_servo.angle = 0
+        #     angle = 0
 
         with state_lock:
-            needle_servo_state['angle'] = angle
+            # needle_servo_state['angle'] = angle
             needle_servo_state['mode'] = direction
             needle_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -312,7 +312,7 @@ def handle_needle_servo_rotate(data):
         if duration and duration > 0 and direction != 'stop':
             def auto_stop():
                 time.sleep(float(duration))
-                needle_servo.angle = 0
+                # needle_servo.angle = 0
                 with state_lock:
                     needle_servo_state['angle'] = 0
                     needle_servo_state['mode'] = 'stopped'
@@ -898,8 +898,8 @@ def handle_camera_video(data):
 
 def cleanup():
     """Cleanup function to stop all devices on exit"""
-    needle_servo.angle = 0
-    needle_servo.close()
+    # needle_servo.angle = 0
+    # needle_servo.close()
     # pole_servo.angle = 0
     # sliding_motor.stop()
     # extruding_motor.stop()
