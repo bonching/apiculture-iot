@@ -263,7 +263,7 @@ def handle_needle_servo_angle(data):
 
         needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
         needle_servo.angle = angle
-        time.sleep(angle % 45)
+        time.sleep(round(angle / 45, 1))
         needle_servo.angle = 0
         time.sleep(1)
         needle_servo.angle = None
