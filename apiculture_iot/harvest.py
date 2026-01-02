@@ -75,6 +75,7 @@ PUMP_PIN = 27
 
 # Initialize Devices
 needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180)
+needle_servo.angle = 0
 # pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180)
 # sliding_motor = Motor(forward=SLIDING_MOTOR_FORWARD_PIN, backward=SLIDING_MOTOR_BACKWARD_PIN, enable=SLIDING_MOTOR_ENABLE_PIN)
 # extruding_motor = Motor(forward=EXTRUDING_MOTOR_FORWARD_PIN, backward=EXTRUDING_MOTOR_BACKWARD_PIN, enable=EXTRUDING_MOTOR_ENABLE_PIN)
@@ -159,40 +160,39 @@ def broadcast_status_update(device, status):
 
 
 
-    # ============= Websocket Connection Handlers =============
+# ============= Websocket Connection Handlers =============
+@socketio.on('connect')
+def handle_connect():
+    """Handle client connection"""
+    client_id = request.sid
 
-    @socketio.on('connect')
-    def handle_connect():
-        """Handle client connection"""
-        client_id = request.sid
+    connected_clients.add(client_id)
+    print(f"Client connected: {client_id} (Total clients: {len(connected_clients)})")
 
-        connected_clients.add(client_id)
-        print(f"Client connected: {client_id} (Total clients: {len(connected_clients)})")
-
-        # Send welcome message with current device states
-        emit('connected', {
-            'success': True,
-            'message': 'Connected to Apiculture IoT Control System',
-            'client_id': client_id,
-            'devices': {
-                'needle_servo': needle_servo_state.copy(),
-                'pole_servo': pole_servo_state.copy(),
-                'camera': camera_state.copy(),
-                'sliding_motor': sliding_motor_state.copy(),
-                'extruding_motor': extruding_motor_state.copy(),
-                'smoker': smoker_state.copy(),
-                'pump': pump_state.copy()
-            },
-            'device_availability': {
-                'needle_servo': 'available',
-                'pole_servo': 'available',
-                'camera': 'available' if camera_available else 'unavailable',
-                'sliding_motor': 'available',
-                'extruding_motor': 'available',
-                'smoker': 'available',
-                'pump': 'available'
-            }
-        })
+    # Send welcome message with current device states
+    emit('connected', {
+        'success': True,
+        'message': 'Connected to Apiculture IoT Control System',
+        'client_id': client_id,
+        'devices': {
+            'needle_servo': needle_servo_state.copy(),
+            'pole_servo': pole_servo_state.copy(),
+            'camera': camera_state.copy(),
+            'sliding_motor': sliding_motor_state.copy(),
+            'extruding_motor': extruding_motor_state.copy(),
+            'smoker': smoker_state.copy(),
+            'pump': pump_state.copy()
+        },
+        'device_availability': {
+            'needle_servo': 'available',
+            'pole_servo': 'available',
+            'camera': 'available' if camera_available else 'unavailable',
+            'sliding_motor': 'available',
+            'extruding_motor': 'available',
+            'smoker': 'available',
+            'pump': 'available'
+        }
+    })
 
 
 @socketio.on('disconnect')
@@ -339,100 +339,100 @@ def handle_needle_servo_rotate(data):
         emit('error', {'message': str(e), 'device': 'needle_servo'})
 
 
-@socketio.on('pole_servo:angle')
-def handle_pole_servo_angle(data):
-    """Set pole servo to specific angle (for rotating pole)"""
-    try:
-        if not data or 'angle' not in data:
-            emit('error', {'message': 'Missing angle parameter', 'device': 'pole_servo'})
-            return
-
-        angle = float(data['angle'])
-
-        if angle < -180 or angle > 180:
-            emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees', 'device': 'pole_servo'})
-            return
-
-        pole_servo.angle = angle
-
-        with state_lock:
-            pole_servo_state['angle'] = angle
-            pole_servo_state['mode'] = 'positioned'
-            pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
-
-        response = {
-            'success': True,
-            'angle': angle,
-            'message': f'Pole servo set to angle {angle} degrees'
-        }
-
-        emit('pole_servo:response', response)
-        broadcast_status_update('pole_servo', pole_servo_state.copy())
-
-    except Exception as e:
-        emit('error', {'message': f'Error setting pole servo angle: {e}', 'device': 'pole_servo'})
-
-
-@socketio.on('pole_servo:rotate')
-def handle_pole_servo_rotate(data):
-    """Control pole servo continuous rotation"""
-    try:
-        if not data or 'direction' not in data:
-            emit('error', {'message': 'Missing direction parameter', 'device': 'pole_servo'})
-            return
-
-        direction = data['direction'].lower()
-        duration = data.get('duration', None)
-
-        if direction not in ['forward', 'reverse', 'stop']:
-            emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'pole_servo'})
-            return
-
-        if direction == 'forward':
-            pole_servo.angle = 180
-            angle = 180
-        elif direction == 'reverse':
-            pole_servo.angle = -180
-            angle = -180
-        else:
-            pole_servo.angle = 0
-            angle = 0
-
-        with state_lock:
-            pole_servo_state['angle'] = angle
-            pole_servo_state['mode'] = direction
-            pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
-
-        # Auto-stop if duration is specified
-        if duration and duration > 0 and direction != 'stop':
-            def auto_stop():
-                time.sleep(float(duration))
-                pole_servo.angle = 0
-                with state_lock:
-                    pole_servo_state['angle'] = 0
-                    pole_servo_state['mode'] = 'stopped'
-                broadcast_status_update('pole_servo', pole_servo_state.copy())
-
-            threading.Thread(target=auto_stop, daemon=True).start()
-
-            response = {
-                'success': True,
-                'direction': direction,
-                'duration': duration,
-                'message': f'Pole servo rotating {direction} for {duration} seconds'
-            }
-        else:
-            response = {
-                'success': True,
-                'direction': direction,
-                'message': f'Pole servo {direction}'
-            }
-
-        emit('pole_servo:response', response)
-        broadcast_status_update('pole_servo', pole_servo_state.copy())
-
-    except Exception as e:
-        emit('error', {'message': str(e), 'device': 'pole_servo'})
+# @socketio.on('pole_servo:angle')
+# def handle_pole_servo_angle(data):
+#     """Set pole servo to specific angle (for rotating pole)"""
+#     try:
+#         if not data or 'angle' not in data:
+#             emit('error', {'message': 'Missing angle parameter', 'device': 'pole_servo'})
+#             return
+#
+#         angle = float(data['angle'])
+#
+#         if angle < -180 or angle > 180:
+#             emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees', 'device': 'pole_servo'})
+#             return
+#
+#         pole_servo.angle = angle
+#
+#         with state_lock:
+#             pole_servo_state['angle'] = angle
+#             pole_servo_state['mode'] = 'positioned'
+#             pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
+#
+#         response = {
+#             'success': True,
+#             'angle': angle,
+#             'message': f'Pole servo set to angle {angle} degrees'
+#         }
+#
+#         emit('pole_servo:response', response)
+#         broadcast_status_update('pole_servo', pole_servo_state.copy())
+#
+#     except Exception as e:
+#         emit('error', {'message': f'Error setting pole servo angle: {e}', 'device': 'pole_servo'})
+#
+#
+# @socketio.on('pole_servo:rotate')
+# def handle_pole_servo_rotate(data):
+#     """Control pole servo continuous rotation"""
+#     try:
+#         if not data or 'direction' not in data:
+#             emit('error', {'message': 'Missing direction parameter', 'device': 'pole_servo'})
+#             return
+#
+#         direction = data['direction'].lower()
+#         duration = data.get('duration', None)
+#
+#         if direction not in ['forward', 'reverse', 'stop']:
+#             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'pole_servo'})
+#             return
+#
+#         if direction == 'forward':
+#             pole_servo.angle = 180
+#             angle = 180
+#         elif direction == 'reverse':
+#             pole_servo.angle = -180
+#             angle = -180
+#         else:
+#             pole_servo.angle = 0
+#             angle = 0
+#
+#         with state_lock:
+#             pole_servo_state['angle'] = angle
+#             pole_servo_state['mode'] = direction
+#             pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
+#
+#         # Auto-stop if duration is specified
+#         if duration and duration > 0 and direction != 'stop':
+#             def auto_stop():
+#                 time.sleep(float(duration))
+#                 pole_servo.angle = 0
+#                 with state_lock:
+#                     pole_servo_state['angle'] = 0
+#                     pole_servo_state['mode'] = 'stopped'
+#                 broadcast_status_update('pole_servo', pole_servo_state.copy())
+#
+#             threading.Thread(target=auto_stop, daemon=True).start()
+#
+#             response = {
+#                 'success': True,
+#                 'direction': direction,
+#                 'duration': duration,
+#                 'message': f'Pole servo rotating {direction} for {duration} seconds'
+#             }
+#         else:
+#             response = {
+#                 'success': True,
+#                 'direction': direction,
+#                 'message': f'Pole servo {direction}'
+#             }
+#
+#         emit('pole_servo:response', response)
+#         broadcast_status_update('pole_servo', pole_servo_state.copy())
+#
+#     except Exception as e:
+#         emit('error', {'message': str(e), 'device': 'pole_servo'})
 
 
 # ============= Camera Websocket Handlers =============
@@ -916,8 +916,10 @@ if __name__ == '__main__':
     import atexit
     atexit.register(cleanup)
 
+    print("\n\n\n")
     print("=" * 60)
     print("Starting Apiculture IoT Websocket Control API...")
     print("=" * 60)
+    print("\n\n\n")
 
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
