@@ -270,8 +270,8 @@ def handle_needle_servo_angle(data):
         # time.sleep(5)
         needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
         needle_servo.angle = angle
-        time.sleep(1)
-        needle_servo.angle = None
+        # time.sleep(1)
+        needle_servo.angle = 0
         needle_servo.close()
         time.sleep(5)
 
@@ -296,6 +296,9 @@ def handle_needle_servo_angle(data):
 @socketio.on('needle_servo:rotate')
 def handle_needle_servo_rotate(data):
     """Control needle servo continuous rotation"""
+
+    print("Needle servo:rotate - ", data)
+
     try:
         if not data or 'direction' not in data:
             emit('error', {'message': 'Missing direction parameter', 'device': 'needle_servo'})
