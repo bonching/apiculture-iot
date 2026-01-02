@@ -74,8 +74,8 @@ SMOKER_PIN = 17
 PUMP_PIN = 27
 
 # Initialize Devices
-needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-90, max_angle=90)
-pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-90, max_angle=90)
+needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180)
+pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180)
 sliding_motor = Motor(forward=SLIDING_MOTOR_FORWARD_PIN, backward=SLIDING_MOTOR_BACKWARD_PIN, enable=SLIDING_MOTOR_ENABLE_PIN)
 extruding_motor = Motor(forward=EXTRUDING_MOTOR_FORWARD_PIN, backward=EXTRUDING_MOTOR_BACKWARD_PIN, enable=EXTRUDING_MOTOR_ENABLE_PIN)
 smoker = OutputDevice(SMOKER_PIN)
