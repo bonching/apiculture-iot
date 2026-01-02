@@ -75,7 +75,7 @@ PUMP_PIN = 27
 
 # Initialize Devices
 needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180)
-pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180)
+# pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180)
 # sliding_motor = Motor(forward=SLIDING_MOTOR_FORWARD_PIN, backward=SLIDING_MOTOR_BACKWARD_PIN, enable=SLIDING_MOTOR_ENABLE_PIN)
 # extruding_motor = Motor(forward=EXTRUDING_MOTOR_FORWARD_PIN, backward=EXTRUDING_MOTOR_BACKWARD_PIN, enable=EXTRUDING_MOTOR_ENABLE_PIN)
 # smoker = OutputDevice(SMOKER_PIN)
@@ -898,7 +898,7 @@ def handle_camera_video(data):
 def cleanup():
     """Cleanup function to stop all devices on exit"""
     needle_servo.angle = 0
-    pole_servo.angle = 0
+    # pole_servo.angle = 0
     # sliding_motor.stop()
     # extruding_motor.stop()
     # smoker.off()
