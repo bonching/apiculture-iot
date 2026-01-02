@@ -247,6 +247,9 @@ def handle_get_health():
 @socketio.on('needle_servo:angle')
 def handle_needle_servo_angle(data):
     """Set needle servo to specified angle (for flipping needle to stand/lay down)"""
+
+    print("Needle servo:angle - ", data)
+
     try:
         if not data or 'angle' not in data:
             emit('error', {'message': 'Invalid request - angle parameter is required'})
