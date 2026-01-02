@@ -907,6 +907,7 @@ def check_and_clean_gpio():
 def cleanup():
     """Cleanup function to stop all devices on exit"""
     needle_servo.angle = 0
+    needle_servo.close()
     # pole_servo.angle = 0
     # sliding_motor.stop()
     # extruding_motor.stop()
