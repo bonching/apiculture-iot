@@ -261,7 +261,10 @@ def handle_needle_servo_angle(data):
             emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees'})
             return
 
-        # needle_servo.angle = angle
+        needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+        needle_servo.angle = angle
+        time.sleep(5)
+        needle_servo.close()
 
         with state_lock:
             needle_servo_state['angle'] = angle
