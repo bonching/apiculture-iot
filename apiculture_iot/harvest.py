@@ -253,8 +253,8 @@ def handle_needle_servo_angle(data):
 
         angle = float(data['angle'])
 
-        if angle < -90 or angle > 90:
-            emit('error', {'message': 'Invalid request - angle must be between -90 and 90 degrees'})
+        if angle < -180 or angle > 180:
+            emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees'})
             return
 
         needle_servo.angle = angle
@@ -293,11 +293,11 @@ def handle_needle_servo_rotate(data):
             return
 
         if direction == 'forward':
-            needle_servo.angle = 90
-            angle = 90
+            needle_servo.angle = 180
+            angle = 180
         elif direction == 'reverse':
-            needle_servo.angle = -90
-            angle = -90
+            needle_servo.angle = -180
+            angle = -180
         else:
             needle_servo.angle = 0
             angle = 0
@@ -349,8 +349,8 @@ def handle_pole_servo_angle(data):
 
         angle = float(data['angle'])
 
-        if angle < -90 or angle > 90:
-            emit('error', {'message': 'Invalid request - angle must be between -90 and 90 degrees', 'device': 'pole_servo'})
+        if angle < -180 or angle > 180:
+            emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees', 'device': 'pole_servo'})
             return
 
         pole_servo.angle = angle
@@ -389,11 +389,11 @@ def handle_pole_servo_rotate(data):
             return
 
         if direction == 'forward':
-            pole_servo.angle = 90
-            angle = 90
+            pole_servo.angle = 180
+            angle = 180
         elif direction == 'reverse':
-            pole_servo.angle = -90
-            angle = -90
+            pole_servo.angle = -180
+            angle = -180
         else:
             pole_servo.angle = 0
             angle = 0
