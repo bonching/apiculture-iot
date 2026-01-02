@@ -897,13 +897,6 @@ def handle_camera_video(data):
 
 # ============= Cleanup and Main =============
 
-def check_and_clean_gpio():
-    try:
-        subprocess.run(['gpio', 'unexportall'], capture_output=True, check=True)
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
-
 def cleanup():
     """Cleanup function to stop all devices on exit"""
     needle_servo.angle = 0
@@ -923,8 +916,6 @@ def cleanup():
 
 
 if __name__ == '__main__':
-    check_and_clean_gpio()
-
     import atexit
     atexit.register(cleanup)
 
