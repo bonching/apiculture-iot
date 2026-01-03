@@ -78,9 +78,9 @@ PUMP_PIN = 27
 
 # Initialize Devices
 # needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
-pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
-slider_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
-extruder_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+# pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+# slider_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+# extruder_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
 # sliding_motor = Motor(forward=SLIDING_MOTOR_FORWARD_PIN, backward=SLIDING_MOTOR_BACKWARD_PIN, enable=SLIDING_MOTOR_ENABLE_PIN)
 # extruding_motor = Motor(forward=EXTRUDING_MOTOR_FORWARD_PIN, backward=EXTRUDING_MOTOR_BACKWARD_PIN, enable=EXTRUDING_MOTOR_ENABLE_PIN)
 # smoker = OutputDevice(SMOKER_PIN)
@@ -399,11 +399,13 @@ def handle_pole_servo_angle(data):
             emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees', 'device': 'pole_servo'})
             return
 
+        pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
         pole_servo.angle = angle
 
         def detach_after_move():
             time.sleep(0.5)
-            pole_servo.detach()
+            pole_servo.angle = None
+            pole_servo.close()
 
         threading.Thread(target=detach_after_move, daemon=True).start()
 
@@ -443,6 +445,7 @@ def handle_slider_servo_rotate(data):
             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'slider_servo'})
             return
 
+        slider_servo = AngularServo(SLIDER_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
         if direction == 'forward':
             slider_servo.angle = 180
             angle = 180
@@ -462,7 +465,8 @@ def handle_slider_servo_rotate(data):
         if duration and duration > 0 and direction != 'stop':
             def auto_stop():
                 time.sleep(float(duration))
-                slider_servo.detach()
+                slider_servo.angle = None
+                slider_servo.close()
                 with state_lock:
                     slider_servo_state['angle'] = 0
                     slider_servo_state['mode'] = 'stopped'
@@ -508,6 +512,7 @@ def handle_extruder_servo_rotate(data):
             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'extruder_servo'})
             return
 
+        extruder_servo = AngularServo(EXTRUDER_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
         if direction == 'forward':
             extruder_servo.angle = 180
             angle = 180
@@ -527,7 +532,8 @@ def handle_extruder_servo_rotate(data):
         if duration and duration > 0 and direction != 'stop':
             def auto_stop():
                 time.sleep(float(duration))
-                extruder_servo.detach()
+                extruder_servo.angle = None
+                extruder_servo.close()
                 with state_lock:
                     extruder_servo_state['angle'] = 0
                     extruder_servo_state['mode'] = 'stopped'
@@ -1082,9 +1088,9 @@ def handle_smoker_control(data):
 def cleanup():
     """Cleanup function to stop all devices on exit"""
     # needle_servo.close()
-    pole_servo.close()
-    slider_servo.close()
-    extruder_servo.close()
+    # pole_servo.close()
+    # slider_servo.close()
+    # extruder_servo.close()
     # sliding_motor.stop()
     # extruding_motor.stop()
     # smoker.off()
