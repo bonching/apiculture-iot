@@ -455,8 +455,8 @@ def handle_slider_servo_rotate(data):
         direction = data['direction'].lower()
         duration = data.get('duration', 1)
 
-        if direction not in ['forward', 'reverse', 'stop']:
-            emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'slider_servo'})
+        if direction not in ['forward', 'backward', 'stop']:
+            emit('error', {'message': 'Direction must be forward, backward, or stop', 'device': 'slider_servo'})
             return
 
         client_sid = request.sid
@@ -465,7 +465,7 @@ def handle_slider_servo_rotate(data):
         if direction == 'forward':
             slider_servo.angle = 180
             angle = 180
-        elif direction == 'reverse':
+        elif direction == 'backward':
             slider_servo.angle = -180
             angle = -180
         else:
