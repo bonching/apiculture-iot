@@ -57,10 +57,10 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 # GPIO Pin Configuration
 
 # Needle Servo (flipping needle to stand/lay down)
-NEEDLE_SERVO_PIN = 18
-
-# Pole Servo (rotating pole)
-POLE_SERVO_PIN = 12
+NEEDLE_SERVO_PIN = 22
+POLE_SERVO_PIN = 17
+SLIDER_SERVO_PIN = 18
+EXTRUDER_SERVO_PIN = 27
 
 # Sliding Motor (horizontal movement)
 SLIDING_MOTOR_FORWARD_PIN = 23
@@ -77,8 +77,10 @@ SMOKER_PIN = 17
 PUMP_PIN = 27
 
 # Initialize Devices
-needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
-# pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+# needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+slider_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
+extruder_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
 # sliding_motor = Motor(forward=SLIDING_MOTOR_FORWARD_PIN, backward=SLIDING_MOTOR_BACKWARD_PIN, enable=SLIDING_MOTOR_ENABLE_PIN)
 # extruding_motor = Motor(forward=EXTRUDING_MOTOR_FORWARD_PIN, backward=EXTRUDING_MOTOR_BACKWARD_PIN, enable=EXTRUDING_MOTOR_ENABLE_PIN)
 # smoker = OutputDevice(SMOKER_PIN)
@@ -107,6 +109,18 @@ needle_servo_state = {
 }
 
 pole_servo_state = {
+    'angle': 0,
+    'mode': 'stopped',
+    'last_command': None
+}
+
+slider_servo_state = {
+    'angle': 0,
+    'mode': 'stopped',
+    'last_command': None
+}
+
+extruder_servo_state = {
     'angle': 0,
     'mode': 'stopped',
     'last_command': None
@@ -262,26 +276,28 @@ def handle_needle_servo_angle(data):
             emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees'})
             return
 
-        # needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-90, max_angle=90, initial_angle=None)
-        # needle_servo.angle = 45
-        # print("sleeping for : ", round(angle / 235, 2))
-        # time.sleep(round(angle / 235, 2))
-        # needle_servo.angle = 0
-        # needle_servo.close()
-        # time.sleep(5)
+        time.sleep(5)
 
-        # needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=0)
-        needle_servo.angle = angle
-        # time.sleep(1)
-        # needle_servo.angle = 0
-        # needle_servo.close()
-        # time.sleep(5)
-
-        def detach_after_move():
-            time.sleep(0.5)
-            needle_servo.detach()
-
-        threading.Thread(target=detach_after_move, daemon=True).start()
+        # # needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-90, max_angle=90, initial_angle=None)
+        # # needle_servo.angle = 45
+        # # print("sleeping for : ", round(angle / 235, 2))
+        # # time.sleep(round(angle / 235, 2))
+        # # needle_servo.angle = 0
+        # # needle_servo.close()
+        # # time.sleep(5)
+        #
+        # # needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=0)
+        # needle_servo.angle = angle
+        # # time.sleep(1)
+        # # needle_servo.angle = 0
+        # # needle_servo.close()
+        # # time.sleep(5)
+        #
+        # def detach_after_move():
+        #     time.sleep(0.5)
+        #     needle_servo.detach()
+        #
+        # threading.Thread(target=detach_after_move, daemon=True).start()
 
         with state_lock:
             needle_servo_state['angle'] = angle
@@ -319,15 +335,16 @@ def handle_needle_servo_rotate(data):
             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'needle_servo'})
             return
 
+        time.sleep(5)
         # needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=0)
         if direction == 'forward':
-            needle_servo.angle = 180
+            # needle_servo.angle = 180
             angle = 180
         elif direction == 'reverse':
-            needle_servo.angle = -180
+            # needle_servo.angle = -180
             angle = -180
         else:
-            needle_servo.angle = 0
+            # needle_servo.angle = 0
             angle = 0
 
         with state_lock:
@@ -337,16 +354,16 @@ def handle_needle_servo_rotate(data):
 
         # Auto-stop if duration is specified
         if duration and duration > 0 and direction != 'stop':
-            def auto_stop():
-                time.sleep(float(duration))
-                # needle_servo.angle = 0
-                needle_servo.detach()
-                with state_lock:
-                    needle_servo_state['angle'] = 0
-                    needle_servo_state['mode'] = 'stopped'
-                broadcast_status_update('needle_servo', needle_servo_state.copy())
-
-            threading.Thread(target=auto_stop, daemon=True).start()
+            # def auto_stop():
+            #     time.sleep(float(duration))
+            #     # needle_servo.angle = 0
+            #     needle_servo.detach()
+            #     with state_lock:
+            #         needle_servo_state['angle'] = 0
+            #         needle_servo_state['mode'] = 'stopped'
+            #     broadcast_status_update('needle_servo', needle_servo_state.copy())
+            #
+            # threading.Thread(target=auto_stop, daemon=True).start()
 
             response = {
                 'success': True,
@@ -368,40 +385,176 @@ def handle_needle_servo_rotate(data):
         emit('error', {'message': str(e), 'device': 'needle_servo'})
 
 
-# @socketio.on('pole_servo:angle')
-# def handle_pole_servo_angle(data):
-#     """Set pole servo to specific angle (for rotating pole)"""
-#     try:
-#         if not data or 'angle' not in data:
-#             emit('error', {'message': 'Missing angle parameter', 'device': 'pole_servo'})
-#             return
-#
-#         angle = float(data['angle'])
-#
-#         if angle < -180 or angle > 180:
-#             emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees', 'device': 'pole_servo'})
-#             return
-#
-#         pole_servo.angle = angle
-#
-#         with state_lock:
-#             pole_servo_state['angle'] = angle
-#             pole_servo_state['mode'] = 'positioned'
-#             pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
-#
-#         response = {
-#             'success': True,
-#             'angle': angle,
-#             'message': f'Pole servo set to angle {angle} degrees'
-#         }
-#
-#         emit('pole_servo:response', response)
-#         broadcast_status_update('pole_servo', pole_servo_state.copy())
-#
-#     except Exception as e:
-#         emit('error', {'message': f'Error setting pole servo angle: {e}', 'device': 'pole_servo'})
-#
-#
+@socketio.on('pole_servo:angle')
+def handle_pole_servo_angle(data):
+    """Set pole servo to specific angle (for rotating pole)"""
+    try:
+        if not data or 'angle' not in data:
+            emit('error', {'message': 'Missing angle parameter', 'device': 'pole_servo'})
+            return
+
+        angle = float(data['angle'])
+
+        if angle < -180 or angle > 180:
+            emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees', 'device': 'pole_servo'})
+            return
+
+        pole_servo.angle = angle
+
+        def detach_after_move():
+            time.sleep(0.5)
+            pole_servo.detach()
+
+        threading.Thread(target=detach_after_move, daemon=True).start()
+
+        with state_lock:
+            pole_servo_state['angle'] = angle
+            pole_servo_state['mode'] = 'positioned'
+            pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        response = {
+            'success': True,
+            'angle': angle,
+            'message': f'Pole servo set to angle {angle} degrees'
+        }
+
+        emit('pole_servo:response', response)
+        broadcast_status_update('pole_servo', pole_servo_state.copy())
+
+    except Exception as e:
+        emit('error', {'message': f'Error setting pole servo angle: {e}', 'device': 'pole_servo'})
+
+
+@socketio.on('slider_servo:rotate')
+def handle_slider_servo_rotate(data):
+    """Control slider servo continuous rotation"""
+
+    print("Slider servo:rotate - ", data)
+
+    try:
+        if not data or 'direction' not in data:
+            emit('error', {'message': 'Missing direction parameter', 'device': 'slider_servo'})
+            return
+
+        direction = data['direction'].lower()
+        duration = data.get('duration', None)
+
+        if direction not in ['forward', 'reverse', 'stop']:
+            emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'slider_servo'})
+            return
+
+        if direction == 'forward':
+            slider_servo.angle = 180
+            angle = 180
+        elif direction == 'reverse':
+            slider_servo.angle = -180
+            angle = -180
+        else:
+            slider_servo.angle = 0
+            angle = 0
+
+        with state_lock:
+            slider_servo_state['angle'] = angle
+            slider_servo_state['mode'] = direction
+            slider_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Auto-stop if duration is specified
+        if duration and duration > 0 and direction != 'stop':
+            def auto_stop():
+                time.sleep(float(duration))
+                slider_servo.detach()
+                with state_lock:
+                    slider_servo_state['angle'] = 0
+                    slider_servo_state['mode'] = 'stopped'
+                broadcast_status_update('slider_servo', slider_servo_state.copy())
+
+            threading.Thread(target=auto_stop, daemon=True).start()
+
+            response = {
+                'success': True,
+                'direction': direction,
+                'duration': duration,
+                'message': f'Needle servo rotating {direction} for {duration} seconds'
+            }
+        else:
+            response = {
+                'success': True,
+                'direction': direction,
+                'message': f'Needle servo {direction}'
+            }
+
+        emit('slider_servo:response', response)
+        broadcast_status_update('slider_servo', slider_servo_state.copy())
+
+    except Exception as e:
+        emit('error', {'message': str(e), 'device': 'slider_servo'})
+
+
+@socketio.on('extruder_servo:rotate')
+def handle_extruder_servo_rotate(data):
+    """Control extruder servo continuous rotation"""
+
+    print("Slider servo:rotate - ", data)
+
+    try:
+        if not data or 'direction' not in data:
+            emit('error', {'message': 'Missing direction parameter', 'device': 'extruder_servo'})
+            return
+
+        direction = data['direction'].lower()
+        duration = data.get('duration', None)
+
+        if direction not in ['forward', 'reverse', 'stop']:
+            emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'extruder_servo'})
+            return
+
+        if direction == 'forward':
+            extruder_servo.angle = 180
+            angle = 180
+        elif direction == 'reverse':
+            extruder_servo.angle = -180
+            angle = -180
+        else:
+            extruder_servo.angle = 0
+            angle = 0
+
+        with state_lock:
+            extruder_servo_state['angle'] = angle
+            extruder_servo_state['mode'] = direction
+            extruder_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Auto-stop if duration is specified
+        if duration and duration > 0 and direction != 'stop':
+            def auto_stop():
+                time.sleep(float(duration))
+                extruder_servo.detach()
+                with state_lock:
+                    extruder_servo_state['angle'] = 0
+                    extruder_servo_state['mode'] = 'stopped'
+                broadcast_status_update('extruder_servo', extruder_servo_state.copy())
+
+            threading.Thread(target=auto_stop, daemon=True).start()
+
+            response = {
+                'success': True,
+                'direction': direction,
+                'duration': duration,
+                'message': f'Needle servo rotating {direction} for {duration} seconds'
+            }
+        else:
+            response = {
+                'success': True,
+                'direction': direction,
+                'message': f'Needle servo {direction}'
+            }
+
+        emit('extruder_servo:response', response)
+        broadcast_status_update('extruder_servo', extruder_servo_state.copy())
+
+    except Exception as e:
+        emit('error', {'message': str(e), 'device': 'extruder_servo'})
+
+
 # @socketio.on('pole_servo:rotate')
 # def handle_pole_servo_rotate(data):
 #     """Control pole servo continuous rotation"""
@@ -469,9 +622,9 @@ def handle_needle_servo_rotate(data):
 @socketio.on('camera:capture')
 def handle_camera_capture(data):
     """Capture a photo"""
-    if not camera_available:
-        emit('error', {'message': 'Camera is not available', 'device': 'camera'})
-        return
+    # if not camera_available:
+    #     emit('error', {'message': 'Camera is not available', 'device': 'camera'})
+    #     return
 
     try:
         data = data or {}
@@ -483,10 +636,10 @@ def handle_camera_capture(data):
         filpath = os.path.join(PHOTO_DIR, filename)
 
         # Configure and capture
-        camera.start()
+        # camera.start()
         time.sleep(2)
-        camera.capture_file(filpath)
-        camera.stop()
+        # camera.capture_file(filpath)
+        # camera.stop()
 
         with state_lock:
             camera_state['last_photo'] = filpath
@@ -775,71 +928,73 @@ def handle_camera_video(data):
 
 
 # ============= Electric Smoker Websocket Handlers =============
-#
-# @socketio.on('smoker:control')
-# def handle_smoker_control(data):
-#     """Control electric smoker"""
-#     try:
-#         if not data or 'action' not in data:
-#             emit('error', {'message': 'Missing action parameter', 'device': 'smoker'})
-#             return
-#
-#         action = data['action'].lower()
-#         duration = data.get('duration', None)
-#
-#         if action not in ['on', 'off']:
-#             emit('error', {'message': 'Action must be on or off', 'device': 'smoker'})
-#             return
-#
-#         if action == 'on':
-#             smoker.on()
-#
-#             with state_lock:
-#                 smoker_state['active'] = True
-#                 smoker_state['start_time'] = time.time()
-#                 smoker_state['duration'] = duration
-#
-#             # Auto-stop if duration is specified
-#             if duration and duration > 0:
-#                 def auto_stop_smoker():
-#                     time.sleep(float(duration))
-#                     smoker.off()
-#                     with state_lock:
-#                         smoker_state['active'] = False
-#                     broadcast_status_update('smoker', smoker_state.copy())
-#
-#                 threading.Thread(target=auto_stop_smoker, daemon=True).start()
-#                 response = {
-#                     'success': True,
-#                     'action': 'on',
-#                     'duration': duration,
-#                     'message': f'Electric smoker turned on for {duration} seconds'
-#                 }
-#             else:
-#                 response = {
-#                     'success': True,
-#                     'action': 'on',
-#                     'message': 'Electric smoker turned on'
-#                 }
-#
-#         else: # off
-#             smoker.off()
-#
-#             with state_lock:
-#                 smoker_state['active'] = False
-#                 smoker_state['duration'] = None
-#
-#             response = {
-#                 'success': True,
-#                 'action': 'off',
-#                 'message': 'Electric smoker turned off'
-#             }
-#
-#         emit('smoker:response', response)
-#         broadcast_status_update('smoker', smoker_state.copy())
-#
-#     except Exception as e:
-#         emit('error', {'message': str(e), 'device': 'smoker'})
+
+@socketio.on('smoker:control')
+def handle_smoker_control(data):
+    """Control electric smoker"""
+    try:
+        if not data or 'action' not in data:
+            emit('error', {'message': 'Missing action parameter', 'device': 'smoker'})
+            return
+
+        action = data['action'].lower()
+        duration = data.get('duration', None)
+
+        if action not in ['on', 'off']:
+            emit('error', {'message': 'Action must be on or off', 'device': 'smoker'})
+            return
+
+        if action == 'on':
+            # smoker.on()
+            time.sleep(5)
+
+            with state_lock:
+                smoker_state['active'] = True
+                smoker_state['start_time'] = time.time()
+                smoker_state['duration'] = duration
+
+            # Auto-stop if duration is specified
+            if duration and duration > 0:
+                def auto_stop_smoker():
+                    time.sleep(float(duration))
+                    # smoker.off()
+                    with state_lock:
+                        smoker_state['active'] = False
+                    broadcast_status_update('smoker', smoker_state.copy())
+
+                threading.Thread(target=auto_stop_smoker, daemon=True).start()
+                response = {
+                    'success': True,
+                    'action': 'on',
+                    'duration': duration,
+                    'message': f'Electric smoker turned on for {duration} seconds'
+                }
+            else:
+                response = {
+                    'success': True,
+                    'action': 'on',
+                    'message': 'Electric smoker turned on'
+                }
+
+        else: # off
+            # smoker.off()
+            time.sleep(5)
+
+            with state_lock:
+                smoker_state['active'] = False
+                smoker_state['duration'] = None
+
+            response = {
+                'success': True,
+                'action': 'off',
+                'message': 'Electric smoker turned off'
+            }
+
+        emit('smoker:response', response)
+        broadcast_status_update('smoker', smoker_state.copy())
+
+    except Exception as e:
+        emit('error', {'message': str(e), 'device': 'smoker'})
 
 
 # ============= Peristaltic Pump Websocket Handlers =============
@@ -926,9 +1081,10 @@ def handle_camera_video(data):
 
 def cleanup():
     """Cleanup function to stop all devices on exit"""
-    # needle_servo.angle = 0
     # needle_servo.close()
-    # pole_servo.angle = 0
+    pole_servo.close()
+    slider_servo.close()
+    extruder_servo.close()
     # sliding_motor.stop()
     # extruding_motor.stop()
     # smoker.off()
