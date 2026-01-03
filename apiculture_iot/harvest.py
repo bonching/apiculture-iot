@@ -388,6 +388,9 @@ def handle_needle_servo_rotate(data):
 @socketio.on('pole_servo:angle')
 def handle_pole_servo_angle(data):
     """Set pole servo to specific angle (for rotating pole)"""
+
+    print("Pole servo:angle - ", data)
+
     try:
         if not data or 'angle' not in data:
             emit('error', {'message': 'Missing angle parameter', 'device': 'pole_servo'})
@@ -508,7 +511,7 @@ def handle_slider_servo_rotate(data):
 def handle_extruder_servo_rotate(data):
     """Control extruder servo continuous rotation"""
 
-    print("Slider servo:rotate - ", data)
+    print("Extruder servo:rotate - ", data)
 
     try:
         if not data or 'direction' not in data:
