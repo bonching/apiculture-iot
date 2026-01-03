@@ -456,6 +456,8 @@ def handle_slider_servo_rotate(data):
             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'slider_servo'})
             return
 
+        client_sid = request.sid
+
         slider_servo = AngularServo(SLIDER_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
         if direction == 'forward':
             slider_servo.angle = 180
@@ -474,25 +476,29 @@ def handle_slider_servo_rotate(data):
 
         # Postprocess
         def postprocess_after_rotate():
-            time.sleep(float(duration))
-            slider_servo.angle = None
-            slider_servo.close()
-            with state_lock:
-                slider_servo_state['angle'] = 0
-                slider_servo_state['mode'] = 'stopped'
-            broadcast_status_update('slider_servo', slider_servo_state.copy())
+            try:
+                time.sleep(float(duration))
+                slider_servo.angle = None
+                slider_servo.detach()
+                slider_servo.close()
+                with state_lock:
+                    slider_servo_state['angle'] = 0
+                    slider_servo_state['mode'] = 'stopped'
+                broadcast_status_update('slider_servo', slider_servo_state.copy())
+
+                response = {
+                    'success': True,
+                    'direction': direction,
+                    'duration': duration,
+                    'message': f'Needle servo rotating {direction} for {duration} seconds'
+                }
+
+                socketio.emit('slider_servo:response', response, room=client_sid, namespace='/')
+                broadcast_status_update('slider_servo', slider_servo_state.copy())
+            except Exception as e:
+                socketio.emit('error', {'message': str(e), 'device': 'slider_servo'}, room=client_sid, namespace='/')
 
         threading.Thread(target=postprocess_after_rotate, daemon=True).start()
-
-        response = {
-            'success': True,
-            'direction': direction,
-            'duration': duration,
-            'message': f'Needle servo rotating {direction} for {duration} seconds'
-        }
-
-        emit('slider_servo:response', response)
-        broadcast_status_update('slider_servo', slider_servo_state.copy())
 
     except Exception as e:
         emit('error', {'message': str(e), 'device': 'slider_servo'})
@@ -520,6 +526,8 @@ def handle_extruder_servo_rotate(data):
             emit('error', {'message': 'Direction must be extend, retract, or stop', 'device': 'extruder_servo'})
             return
 
+        client_sid = request.sid
+
         extruder_servo = AngularServo(EXTRUDER_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
         if direction == 'extend':
             extruder_servo.angle = 180
@@ -538,25 +546,29 @@ def handle_extruder_servo_rotate(data):
 
         # Postprocess
         def postprocess_after_rotate():
-            time.sleep(float(duration))
-            extruder_servo.angle = None
-            extruder_servo.close()
-            with state_lock:
-                extruder_servo_state['angle'] = 0
-                extruder_servo_state['mode'] = 'stopped'
-            broadcast_status_update('extruder_servo', extruder_servo_state.copy())
+            try:
+                time.sleep(float(duration))
+                extruder_servo.angle = None
+                extruder_servo.detach()
+                extruder_servo.close()
+                with state_lock:
+                    extruder_servo_state['angle'] = 0
+                    extruder_servo_state['mode'] = 'stopped'
+                broadcast_status_update('extruder_servo', extruder_servo_state.copy())
+
+                response = {
+                    'success': True,
+                    'direction': direction,
+                    'duration': duration,
+                    'message': f'Needle servo rotating {direction} for {duration} seconds'
+                }
+
+                socketio.emit('extruder_servo:response', response, room=client_sid, namespace='/')
+                broadcast_status_update('extruder_servo', extruder_servo_state.copy())
+            except Exception as e:
+                socketio.emit('error', {'message': str(e), 'device': 'extruder_servo'}, room=client_sid, namespace='/')
 
         threading.Thread(target=postprocess_after_rotate, daemon=True).start()
-
-        response = {
-            'success': True,
-            'direction': direction,
-            'duration': duration,
-            'message': f'Needle servo rotating {direction} for {duration} seconds'
-        }
-
-        emit('extruder_servo:response', response)
-        broadcast_status_update('extruder_servo', extruder_servo_state.copy())
 
     except Exception as e:
         emit('error', {'message': str(e), 'device': 'extruder_servo'})
