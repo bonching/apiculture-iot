@@ -407,21 +407,21 @@ def handle_pole_servo_angle(data):
             pole_servo.angle = None
             pole_servo.close()
 
+            with state_lock:
+                pole_servo_state['angle'] = angle
+                pole_servo_state['mode'] = 'positioned'
+                pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
+
+            response = {
+                'success': True,
+                'angle': angle,
+                'message': f'Pole servo set to angle {angle} degrees'
+            }
+
+            emit('pole_servo:response', response)
+            broadcast_status_update('pole_servo', pole_servo_state.copy())
+
         threading.Thread(target=postprocess_after_move, daemon=True).start()
-
-        with state_lock:
-            pole_servo_state['angle'] = angle
-            pole_servo_state['mode'] = 'positioned'
-            pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
-
-        response = {
-            'success': True,
-            'angle': angle,
-            'message': f'Pole servo set to angle {angle} degrees'
-        }
-
-        emit('pole_servo:response', response)
-        broadcast_status_update('pole_servo', pole_servo_state.copy())
 
     except Exception as e:
         emit('error', {'message': f'Error setting pole servo angle: {e}', 'device': 'pole_servo'})
