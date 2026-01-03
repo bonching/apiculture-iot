@@ -399,27 +399,34 @@ def handle_pole_servo_angle(data):
             emit('error', {'message': 'Invalid request - angle must be between -180 and 180 degrees', 'device': 'pole_servo'})
             return
 
+        # Get the client's session id before starting thread
+        client_sid = request.sid
+
         pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
         pole_servo.angle = angle
 
         def postprocess_after_move():
-            time.sleep(0.5)
-            pole_servo.angle = None
-            pole_servo.close()
+            try:
+                time.sleep(0.5)
+                pole_servo.angle = None
+                pole_servo.detach()
+                pole_servo.close()
 
-            with state_lock:
-                pole_servo_state['angle'] = angle
-                pole_servo_state['mode'] = 'positioned'
-                pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
+                with state_lock:
+                    pole_servo_state['angle'] = angle
+                    pole_servo_state['mode'] = 'positioned'
+                    pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-            response = {
-                'success': True,
-                'angle': angle,
-                'message': f'Pole servo set to angle {angle} degrees'
-            }
+                response = {
+                    'success': True,
+                    'angle': angle,
+                    'message': f'Pole servo set to angle {angle} degrees'
+                }
 
-            emit('pole_servo:response', response)
-            broadcast_status_update('pole_servo', pole_servo_state.copy())
+                socketio.emit('pole_servo:response', response, room=client_sid, namespace='/')
+                broadcast_status_update('pole_servo', pole_servo_state.copy())
+            except Exception as e:
+                socketio.emit('error', {'message': str(e), 'device': 'pole_servo'}, room=client_sid, namespace='/')
 
         threading.Thread(target=postprocess_after_move, daemon=True).start()
 
