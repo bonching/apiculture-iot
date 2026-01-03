@@ -402,26 +402,26 @@ def handle_pole_servo_angle(data):
         pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
         pole_servo.angle = angle
 
-        def detach_after_move():
+        def postprocess_after_move():
             time.sleep(0.5)
             pole_servo.angle = None
             pole_servo.close()
 
-        threading.Thread(target=detach_after_move, daemon=True).start()
+            with state_lock:
+                pole_servo_state['angle'] = angle
+                pole_servo_state['mode'] = 'positioned'
+                pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-        with state_lock:
-            pole_servo_state['angle'] = angle
-            pole_servo_state['mode'] = 'positioned'
-            pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
+            response = {
+                'success': True,
+                'angle': angle,
+                'message': f'Pole servo set to angle {angle} degrees'
+            }
 
-        response = {
-            'success': True,
-            'angle': angle,
-            'message': f'Pole servo set to angle {angle} degrees'
-        }
+            emit('pole_servo:response', response)
+            broadcast_status_update('pole_servo', pole_servo_state.copy())
 
-        emit('pole_servo:response', response)
-        broadcast_status_update('pole_servo', pole_servo_state.copy())
+        threading.Thread(target=postprocess_after_move, daemon=True).start()
 
     except Exception as e:
         emit('error', {'message': f'Error setting pole servo angle: {e}', 'device': 'pole_servo'})
@@ -438,8 +438,12 @@ def handle_slider_servo_rotate(data):
             emit('error', {'message': 'Missing direction parameter', 'device': 'slider_servo'})
             return
 
+        if not data or 'duration' not in data:
+            emit('error', {'message': 'Missing duration parameter', 'device': 'slider_servo'})
+            return
+
         direction = data['direction'].lower()
-        duration = data.get('duration', None)
+        duration = data.get('duration', 1)
 
         if direction not in ['forward', 'reverse', 'stop']:
             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'slider_servo'})
@@ -461,18 +465,15 @@ def handle_slider_servo_rotate(data):
             slider_servo_state['mode'] = direction
             slider_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-        # Auto-stop if duration is specified
-        if duration and duration > 0 and direction != 'stop':
-            def auto_stop():
-                time.sleep(float(duration))
-                slider_servo.angle = None
-                slider_servo.close()
-                with state_lock:
-                    slider_servo_state['angle'] = 0
-                    slider_servo_state['mode'] = 'stopped'
-                broadcast_status_update('slider_servo', slider_servo_state.copy())
-
-            threading.Thread(target=auto_stop, daemon=True).start()
+        # Postprocess
+        def postprocess_after_rotate():
+            time.sleep(float(duration))
+            slider_servo.angle = None
+            slider_servo.close()
+            with state_lock:
+                slider_servo_state['angle'] = 0
+                slider_servo_state['mode'] = 'stopped'
+            broadcast_status_update('slider_servo', slider_servo_state.copy())
 
             response = {
                 'success': True,
@@ -480,15 +481,11 @@ def handle_slider_servo_rotate(data):
                 'duration': duration,
                 'message': f'Needle servo rotating {direction} for {duration} seconds'
             }
-        else:
-            response = {
-                'success': True,
-                'direction': direction,
-                'message': f'Needle servo {direction}'
-            }
 
-        emit('slider_servo:response', response)
-        broadcast_status_update('slider_servo', slider_servo_state.copy())
+            emit('slider_servo:response', response)
+            broadcast_status_update('slider_servo', slider_servo_state.copy())
+
+        threading.Thread(target=postprocess_after_rotate, daemon=True).start()
 
     except Exception as e:
         emit('error', {'message': str(e), 'device': 'slider_servo'})
@@ -505,8 +502,12 @@ def handle_extruder_servo_rotate(data):
             emit('error', {'message': 'Missing direction parameter', 'device': 'extruder_servo'})
             return
 
+        if not data or 'duration' not in data:
+            emit('error', {'message': 'Missing duration parameter', 'device': 'extruder_servo'})
+            return
+
         direction = data['direction'].lower()
-        duration = data.get('duration', None)
+        duration = data.get('duration', 1)
 
         if direction not in ['extend', 'retract', 'stop']:
             emit('error', {'message': 'Direction must be extend, retract, or stop', 'device': 'extruder_servo'})
@@ -528,18 +529,15 @@ def handle_extruder_servo_rotate(data):
             extruder_servo_state['mode'] = direction
             extruder_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-        # Auto-stop if duration is specified
-        if duration and duration > 0 and direction != 'stop':
-            def auto_stop():
-                time.sleep(float(duration))
-                extruder_servo.angle = None
-                extruder_servo.close()
-                with state_lock:
-                    extruder_servo_state['angle'] = 0
-                    extruder_servo_state['mode'] = 'stopped'
-                broadcast_status_update('extruder_servo', extruder_servo_state.copy())
-
-            threading.Thread(target=auto_stop, daemon=True).start()
+        # Postprocess
+        def postprocess_after_rotate():
+            time.sleep(float(duration))
+            extruder_servo.angle = None
+            extruder_servo.close()
+            with state_lock:
+                extruder_servo_state['angle'] = 0
+                extruder_servo_state['mode'] = 'stopped'
+            broadcast_status_update('extruder_servo', extruder_servo_state.copy())
 
             response = {
                 'success': True,
@@ -547,15 +545,11 @@ def handle_extruder_servo_rotate(data):
                 'duration': duration,
                 'message': f'Needle servo rotating {direction} for {duration} seconds'
             }
-        else:
-            response = {
-                'success': True,
-                'direction': direction,
-                'message': f'Needle servo {direction}'
-            }
 
-        emit('extruder_servo:response', response)
-        broadcast_status_update('extruder_servo', extruder_servo_state.copy())
+            emit('extruder_servo:response', response)
+            broadcast_status_update('extruder_servo', extruder_servo_state.copy())
+
+        threading.Thread(target=postprocess_after_rotate, daemon=True).start()
 
     except Exception as e:
         emit('error', {'message': str(e), 'device': 'extruder_servo'})
