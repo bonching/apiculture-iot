@@ -508,15 +508,15 @@ def handle_extruder_servo_rotate(data):
         direction = data['direction'].lower()
         duration = data.get('duration', None)
 
-        if direction not in ['forward', 'reverse', 'stop']:
-            emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'extruder_servo'})
+        if direction not in ['extend', 'retract', 'stop']:
+            emit('error', {'message': 'Direction must be extend, retract, or stop', 'device': 'extruder_servo'})
             return
 
         extruder_servo = AngularServo(EXTRUDER_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
-        if direction == 'forward':
+        if direction == 'extend':
             extruder_servo.angle = 180
             angle = 180
-        elif direction == 'reverse':
+        elif direction == 'retract':
             extruder_servo.angle = -180
             angle = -180
         else:
