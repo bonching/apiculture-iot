@@ -4,7 +4,7 @@ import time
 import requests
 import os
 
-URL = 'http://192.168.50.232:8080/api/images'
+URL = 'http://192.168.68.106:8081/api/images'
 IMAGE_PATH = "/home/apiculture/Pictures/my_photo.jpg"
 
 
