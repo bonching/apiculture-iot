@@ -3,7 +3,7 @@
 # Update and upgrade the system packages
 sudo apt update
 
-sudo apt install pip3
+sudo apt install python3-setuptools python3-wheel
 sudo apt install python3-picamzero -y
 sudo apt install python3-gpiozero -y
 
