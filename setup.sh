@@ -7,6 +7,7 @@ sudo apt install python3.11-dev
 sudo apt install python3-setuptools python3-wheel
 sudo apt install python3-picamzero -y
 sudo apt install python3-gpiozero -y
+sudo apt install rpi-connect
 
 # install desktop
 #sudo apt install raspberrypi-ui-mods lightdm xserver-xorg arandr -y
