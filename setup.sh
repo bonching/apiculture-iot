@@ -8,6 +8,10 @@ sudo apt install python3-setuptools python3-wheel
 sudo apt install python3-picamzero -y
 sudo apt install python3-gpiozero -y
 
+# install desktop
+#sudo apt install raspberrypi-ui-mods lightdm xserver-xorg arandr -y
+#sudo systemctl set-default graphical.target
+
 # Add PYTHONPATH export to .bashrc
 echo 'export PYTHONPATH=/usr/lib/python3/dist-packages:$PYTHONPATH' >> ~/.bashrc
 source ~/.bashrc
