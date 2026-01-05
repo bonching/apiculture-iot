@@ -12,28 +12,11 @@ echo 'export PYTHONPATH=/usr/lib/python3/dist-packages:$PYTHONPATH' >> ~/.bashrc
 source ~/.bashrc
 
 # Create the project directory
-mkdir -p py_env
-
-# Change into the project directory
-cd py_env
-
-# Create and activate the BME680 virtual environment
-python3 -m venv bme680_venv
-source bme680_venv/bin/activate
-
-# Install the required package for BME680
-#pip3 install adafruit-circuitpython-bme680
-#
-## Install system packages (these will be installed globally)
-#sudo pip3 install RPi.GPIO
-#sudo pip3 install -r /home/apiculture/apiculture-iot/requirements.txt
-#
-## Deactivate the current virtual environment
-#deactivate
+mkdir -p /home/apiculture/py_env
 
 # Create and activate the BME280 virtual environment
-python3 -m venv bme280_venv
-source bme280_venv/bin/activate
+python3 -m venv /home/apiculture/py_env/bme280_venv
+source /home/apiculture/py_env/bme280_venv/bin/activate
 
 # Install the required packages for BME280
 sudo pip3 install adafruit-blinka adafruit-circuitpython-busdevice adafruit-circuitpython-bme280
