@@ -1,7 +1,11 @@
 #!/bin/bash
 
 # Update and upgrade the system packages
-sudo apt update && sudo apt full-upgrade -y
+sudo apt update
+
+sudo apt install pip3
+sudo apt install python3-picamzero -y
+sudo apt install python3-gpiozero -y
 
 # Add PYTHONPATH export to .bashrc
 echo 'export PYTHONPATH=/usr/lib/python3/dist-packages:$PYTHONPATH' >> ~/.bashrc
@@ -18,27 +22,23 @@ python3 -m venv bme680_venv
 source bme680_venv/bin/activate
 
 # Install the required package for BME680
-pip3 install adafruit-circuitpython-bme680
-
-# Install system packages (these will be installed globally)
-sudo apt install python3-picamzero -y
-sudo apt install python3-gpiozero -y
-sudo pip3 install RPi.GPIO
-sudo pip3 install -r /home/apiculture/apiculture-iot/requirements.txt
-
-# Deactivate the current virtual environment
-deactivate
+#pip3 install adafruit-circuitpython-bme680
+#
+## Install system packages (these will be installed globally)
+#sudo pip3 install RPi.GPIO
+#sudo pip3 install -r /home/apiculture/apiculture-iot/requirements.txt
+#
+## Deactivate the current virtual environment
+#deactivate
 
 # Create and activate the BME280 virtual environment
 python3 -m venv bme280_venv
 source bme280_venv/bin/activate
 
 # Install the required packages for BME280
-pip3 install adafruit-blinka adafruit-circuitpython-busdevice adafruit-circuitpython-bme280
+sudo pip3 install adafruit-blinka adafruit-circuitpython-busdevice adafruit-circuitpython-bme280
 
 # Re-install system packages (as specified, even if redundant)
-sudo apt install python3-picamzero -y
-sudo apt install python3-gpiozero -y
 sudo pip3 install RPi.GPIO
 sudo pip3 install -r /home/apiculture/apiculture-iot/requirements.txt
 
