@@ -3,6 +3,7 @@
 # Update and upgrade the system packages
 sudo apt update
 
+sudo apt install python3.11-dev
 sudo apt install python3-setuptools python3-wheel
 sudo apt install python3-picamzero -y
 sudo apt install python3-gpiozero -y
@@ -18,11 +19,14 @@ mkdir -p /home/apiculture/py_env
 python3 -m venv /home/apiculture/py_env/bme280_venv
 source /home/apiculture/py_env/bme280_venv/bin/activate
 
-# Install the required packages for BME280
-sudo pip3 install adafruit-blinka adafruit-circuitpython-busdevice adafruit-circuitpython-bme280
-
 # Re-install system packages (as specified, even if redundant)
-sudo pip3 install RPi.GPIO
-sudo pip3 install -r /home/apiculture/apiculture-iot/requirements.txt
+pip3 install RPi.GPIO
+
+# Install the required packages for BME280
+pip3 install adafruit-blinka
+pip3 install adafruit-circuitpython-busdevice
+pip3 install adafruit-circuitpython-bme280
+
+pip3 install -r /home/apiculture/apiculture-iot/requirements.txt
 
 echo "Setup complete! Virtual environment 'bme280_venv' is activated. Run 'deactivate' to exit when done."
