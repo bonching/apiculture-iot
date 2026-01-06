@@ -44,6 +44,7 @@ import traceback
 from flask import Flask, request
 from flask_socketio import SocketIO, emit
 from gpiozero import AngularServo, Motor, OutputDevice
+import RPi.GPIO as GPIO
 from picamera2 import Picamera2
 import threading
 import time
@@ -55,38 +56,13 @@ app.config['SECRET_KEY'] = 'apiculture-iot-secret-key'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # GPIO Pin Configuration
-
-# Needle Servo (flipping needle to stand/lay down)
 NEEDLE_SERVO_PIN = 22
 POLE_SERVO_PIN = 17
 SLIDER_SERVO_PIN = 18
 EXTRUDER_SERVO_PIN = 27
+SMOKER_PIN = 23
+PUMP_PIN = 24
 
-# Sliding Motor (horizontal movement)
-SLIDING_MOTOR_FORWARD_PIN = 23
-SLIDING_MOTOR_BACKWARD_PIN = 24
-SLIDING_MOTOR_ENABLE_PIN = 25
-
-
-# Extruding Motor (vertical/extrusion movement)
-EXTRUDING_MOTOR_FORWARD_PIN = 5
-EXTRUDING_MOTOR_BACKWARD_PIN = 6
-EXTRUDING_MOTOR_ENABLE_PIN = 13
-
-SMOKER_PIN = 17
-PUMP_PIN = 27
-
-# Initialize Devices
-# needle_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
-# pole_servo = AngularServo(POLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
-# slider_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
-# extruder_servo = AngularServo(NEEDLE_SERVO_PIN, min_angle=-180, max_angle=180, initial_angle=None)
-# sliding_motor = Motor(forward=SLIDING_MOTOR_FORWARD_PIN, backward=SLIDING_MOTOR_BACKWARD_PIN, enable=SLIDING_MOTOR_ENABLE_PIN)
-# extruding_motor = Motor(forward=EXTRUDING_MOTOR_FORWARD_PIN, backward=EXTRUDING_MOTOR_BACKWARD_PIN, enable=EXTRUDING_MOTOR_ENABLE_PIN)
-# smoker = OutputDevice(SMOKER_PIN)
-# pump = OutputDevice(PUMP_PIN)
-
-# Initialize camera
 try:
     camera = Picamera2()
     camera_available = True
@@ -577,67 +553,6 @@ def handle_extruder_servo_rotate(data):
         emit('error', {'message': str(e), 'device': 'extruder_servo'})
 
 
-# @socketio.on('pole_servo:rotate')
-# def handle_pole_servo_rotate(data):
-#     """Control pole servo continuous rotation"""
-#     try:
-#         if not data or 'direction' not in data:
-#             emit('error', {'message': 'Missing direction parameter', 'device': 'pole_servo'})
-#             return
-#
-#         direction = data['direction'].lower()
-#         duration = data.get('duration', None)
-#
-#         if direction not in ['forward', 'reverse', 'stop']:
-#             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'pole_servo'})
-#             return
-#
-#         if direction == 'forward':
-#             pole_servo.angle = 180
-#             angle = 180
-#         elif direction == 'reverse':
-#             pole_servo.angle = -180
-#             angle = -180
-#         else:
-#             pole_servo.angle = 0
-#             angle = 0
-#
-#         with state_lock:
-#             pole_servo_state['angle'] = angle
-#             pole_servo_state['mode'] = direction
-#             pole_servo_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
-#
-#         # Auto-stop if duration is specified
-#         if duration and duration > 0 and direction != 'stop':
-#             def auto_stop():
-#                 time.sleep(float(duration))
-#                 pole_servo.angle = 0
-#                 with state_lock:
-#                     pole_servo_state['angle'] = 0
-#                     pole_servo_state['mode'] = 'stopped'
-#                 broadcast_status_update('pole_servo', pole_servo_state.copy())
-#
-#             threading.Thread(target=auto_stop, daemon=True).start()
-#
-#             response = {
-#                 'success': True,
-#                 'direction': direction,
-#                 'duration': duration,
-#                 'message': f'Pole servo rotating {direction} for {duration} seconds'
-#             }
-#         else:
-#             response = {
-#                 'success': True,
-#                 'direction': direction,
-#                 'message': f'Pole servo {direction}'
-#             }
-#
-#         emit('pole_servo:response', response)
-#         broadcast_status_update('pole_servo', pole_servo_state.copy())
-#
-#     except Exception as e:
-#         emit('error', {'message': str(e), 'device': 'pole_servo'})
-
 
 # ============= Camera Websocket Handlers =============
 
@@ -767,187 +682,6 @@ def handle_camera_video(data):
         emit('error', {'message': str(e), 'device': 'camera'})
 
 
-# ============= DC Motor Websocket Handlers =============
-#
-# @socketio.on('sliding_motor:control')
-# def handle_sliding_motor_control(data):
-#     """Control sliding DC motor (horizontal movement)"""
-#     try:
-#         if not data or 'direction' not in data:
-#             emit('error', {'message': 'Missing direction parameter', 'device': 'sliding_motor'})
-#             return
-#
-#         direction = data['direction'].lower()
-#         speed = float(data.get('speed', 1.0))
-#         duration = data.get('duration', None)
-#
-#         if direction not in ['forward', 'reverse', 'stop']:
-#             emit('error', {'message': 'Direction must be forward, reverse, or stop', 'device': 'sliding_motor'})
-#             return
-#
-#         if speed < 0 or speed > 1:
-#             emit('error', {'message': 'Speed must be between 0 and 1', 'device': 'sliding_motor'})
-#             return
-#
-#         # Control motor
-#         if direction == 'forward':
-#             sliding_motor.forward(speed)
-#         elif direction == 'reverse':
-#             sliding_motor.backward(speed)
-#         else:
-#             sliding_motor.stop()
-#             speed = 0
-#
-#         with state_lock:
-#             sliding_motor_state['speed'] = speed
-#             sliding_motor_state['direction'] = direction
-#             sliding_motor_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
-#
-#         # Auto-stop if duration is specified
-#         if duration and duration > 0 and direction != 'stop':
-#             def auto_stop_sliding_motor():
-#                 time.sleep(float(duration))
-#                 sliding_motor.stop()
-#                 with state_lock:
-#                     sliding_motor_state['speed'] = 0
-#                     sliding_motor_state['direction'] = 'stopped'
-#                 broadcast_status_update('sliding_motor', sliding_motor_state.copy())
-#
-#             threading.Thread(target=auto_stop_sliding_motor, daemon=True).start()
-#             response = {
-#                 'success': True,
-#                 'direction': direction,
-#                 'speed': speed,
-#                 'duration': duration,
-#                 'message': f'Sliding motor moving {direction} at {speed * 100}% speed for {duration} seconds'
-#             }
-#         else:
-#             response = {
-#                 'success': True,
-#                 'direction': direction,
-#                 'speed': speed,
-#                 'message': f'Sliding motor moving {direction} at {speed * 100}% speed'
-#             }
-#
-#         emit('sliding_motor:response', response)
-#         broadcast_status_update('sliding_motor', sliding_motor_state.copy())
-#
-#     except Exception as e:
-#         emit('error', {'message': str(e), 'device': 'sliding_motor'})
-#
-#
-# @socketio.on('sliding_motor:stop')
-# def handle_sliding_motor_stop(data):
-#     """Stop sliding DC motor"""
-#     try:
-#         sliding_motor.stop()
-#
-#         with state_lock:
-#             sliding_motor_state['speed'] = 0
-#             sliding_motor_state['direction'] = 'stopped'
-#             sliding_motor_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
-#
-#         response = {
-#             'success': True,
-#             'message': 'Sliding motor stopped'
-#         }
-#
-#         emit('sliding_motor:response', response)
-#         broadcast_status_update('sliding_motor', sliding_motor_state.copy())
-#
-#     except Exception as e:
-#         emit('error', {'message': str(e), 'device': 'sliding_motor'})
-#
-#
-# @socketio.on('extruding_motor:control')
-# def handle_extruding_motor_control(data):
-#     """Control extruding DC motor (vertical/extrusion movement)"""
-#     try:
-#         if not data or 'direction' not in data:
-#             emit('error', {'message': 'Missing direction parameter', 'device': 'extruding_motor'})
-#             return
-#
-#         direction = data['direction'].lower()
-#         speed = float(data.get('speed', 1.0))
-#         duration = data.get('duration', None)
-#
-#         if direction not in ['up', 'down', 'stop']:
-#             emit('error', {'message': 'Direction must be up, down, or stop', 'device': 'extruding_motor'})
-#             return
-#
-#         if speed < 0 or speed > 1:
-#             emit('error', {'message': 'Speed must be between 0 and 1', 'device': 'extruding_motor'})
-#             return
-#
-#         # Control motor
-#         if direction == 'up':
-#             extruding_motor.forward(speed)
-#         elif direction == 'down':
-#             extruding_motor.backward(speed)
-#         else:
-#             extruding_motor.stop()
-#             speed = 0
-#
-#         with state_lock:
-#             extruding_motor_state['speed'] = speed
-#             extruding_motor_state['direction'] = direction
-#             extruding_motor_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
-#
-#         # Auto-stop if duration is specified
-#         if duration and duration > 0 and direction != 'stop':
-#             def auto_stop_extruding_motor():
-#                 time.sleep(float(duration))
-#                 extruding_motor.stop()
-#                 with state_lock:
-#                     extruding_motor_state['speed'] = 0
-#                     extruding_motor_state['direction'] = 'stopped'
-#                 broadcast_status_update('extruding_motor', extruding_motor_state.copy())
-#
-#             threading.Thread(target=auto_stop_extruding_motor, daemon=True).start()
-#             response = {
-#                 'success': True,
-#                 'direction': direction,
-#                 'speed': speed,
-#                 'duration': duration,
-#                 'message': f'Extruding motor moving {direction} at {speed * 100}% speed for {duration} seconds'
-#             }
-#         else:
-#             response = {
-#                 'success': True,
-#                 'direction': direction,
-#                 'speed': speed,
-#                 'message': f'Extruding motor moving {direction} at {speed * 100}% speed'
-#             }
-#
-#         emit('extruding_motor:response', response)
-#         broadcast_status_update('extruding_motor', extruding_motor_state.copy())
-#
-#     except Exception as e:
-#         emit('error', {'message': str(e), 'device': 'extruding_motor'})
-#
-#
-# @socketio.on('extruding_motor:stop')
-# def handle_extruding_motor_stop(data):
-#     """Stop extruding DC motor"""
-#     try:
-#         extruding_motor.stop()
-#
-#         with state_lock:
-#             extruding_motor_state['speed'] = 0
-#             extruding_motor_state['direction'] = 'stopped'
-#             extruding_motor_state['last_command'] = time.strftime("%Y-%m-%d %H:%M:%S")
-#
-#         response = {
-#             'success': True,
-#             'message': 'Extruding motor stopped'
-#         }
-#
-#         emit('extruding_motor:response', response)
-#         broadcast_status_update('extruding_motor', extruding_motor_state.copy())
-#
-#     except Exception as e:
-#         emit('error', {'message': str(e), 'device': 'extruding_motor'})
-
 
 # ============= Electric Smoker Websocket Handlers =============
 
@@ -959,6 +693,10 @@ def handle_smoker_control(data):
             emit('error', {'message': 'Missing action parameter', 'device': 'smoker'})
             return
 
+        if not data or 'duration' not in data:
+            emit('error', {'message': 'Missing duration parameter', 'device': 'smoker'})
+            return
+
         action = data['action'].lower()
         duration = data.get('duration', None)
 
@@ -966,41 +704,45 @@ def handle_smoker_control(data):
             emit('error', {'message': 'Action must be on or off', 'device': 'smoker'})
             return
 
+        client_sid = request.sid
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(SMOKER_PIN, GPIO.OUT)
+        GPIO.output(SMOKER_PIN, GPIO.LOW)
+
         if action == 'on':
-            # smoker.on()
-            time.sleep(5)
+            GPIO.output(SMOKER_PIN, GPIO.HIGH)
 
             with state_lock:
                 smoker_state['active'] = True
                 smoker_state['start_time'] = time.time()
                 smoker_state['duration'] = duration
 
-            # Auto-stop if duration is specified
             if duration and duration > 0:
                 def auto_stop_smoker():
-                    time.sleep(float(duration))
-                    # smoker.off()
-                    with state_lock:
-                        smoker_state['active'] = False
-                    broadcast_status_update('smoker', smoker_state.copy())
+                    try:
+                        time.sleep(float(duration))
+                        GPIO.output(SMOKER_PIN, GPIO.LOW)
+                        with state_lock:
+                            smoker_state['active'] = False
+                        broadcast_status_update('smoker', smoker_state.copy())
+
+                        response = {
+                            'success': True,
+                            'action': 'on',
+                            'duration': duration,
+                            'message': f'Electric smoker turned on for {duration} seconds'
+                        }
+
+                        socketio.emit('smoker:response', response, room=client_sid, namespace='/')
+                        broadcast_status_update('smoker', extruder_servo_state.copy())
+                    except Exception as e:
+                        socketio.emit('error', {'message': str(e), 'device': 'smoker'}, room=client_sid, namespace='/')
 
                 threading.Thread(target=auto_stop_smoker, daemon=True).start()
-                response = {
-                    'success': True,
-                    'action': 'on',
-                    'duration': duration,
-                    'message': f'Electric smoker turned on for {duration} seconds'
-                }
-            else:
-                response = {
-                    'success': True,
-                    'action': 'on',
-                    'message': 'Electric smoker turned on'
-                }
 
         else: # off
-            # smoker.off()
-            time.sleep(5)
+            GPIO.output(SMOKER_PIN, GPIO.LOW)
 
             with state_lock:
                 smoker_state['active'] = False
@@ -1012,105 +754,100 @@ def handle_smoker_control(data):
                 'message': 'Electric smoker turned off'
             }
 
-        emit('smoker:response', response)
-        broadcast_status_update('smoker', smoker_state.copy())
+            emit('smoker:response', response)
+            broadcast_status_update('smoker', smoker_state.copy())
 
     except Exception as e:
         emit('error', {'message': str(e), 'device': 'smoker'})
 
 
 # ============= Peristaltic Pump Websocket Handlers =============
-#
-# @socketio.on('pump:control')
-# def handle_pump_control(data):
-#     """Control peristaltic pump"""
-#     try:
-#         if not data or 'action' not in data:
-#             emit('error', {'message': 'Missing action parameter', 'device': 'pump'})
-#             return
-#
-#         action = data['action'].lower()
-#         duration = data.get('duration', None)
-#         volume_ml = data.get('volume_ml', None)
-#
-#         if action not in ['on', 'off']:
-#             emit('error', {'message': 'Action must be on or off', 'device': 'pump'})
-#             return
-#
-#         # If volume is specified, calculate duration (assuming 1ml/sec - calibrate for your pump)
-#         ML_PER_SEC = 1.0
-#         if volume_ml and not duration:
-#             duration = volume_ml / ML_PER_SEC
-#
-#         if action == 'on':
-#             pump.on()
-#
-#             with state_lock:
-#                 pump_state['active'] = True
-#                 pump_state['start_time'] = time.time()
-#                 pump_state['duration'] = duration
-#
-#             # Auto-stop if duration is specified
-#             if duration and duration > 0:
-#                 def auto_stop_pump():
-#                     time.sleep(float(duration))
-#                     pump.off()
-#                     with state_lock:
-#                         pump_state['active'] = False
-#                     broadcast_status_update('pump', pump_state.copy())
-#
-#                 threading.Thread(target=auto_stop_pump, daemon=True).start()
-#
-#                 message = f'Peristaltic pump turned on for {duration} seconds'
-#                 if volume_ml:
-#                     message += f' (approx {volume_ml}ml)'
-#
-#                 response = {
-#                     'success': True,
-#                     'action': 'on',
-#                     'duration': duration,
-#                     'volume_ml': volume_ml,
-#                     'message': message
-#                 }
-#             else:
-#                 response = {
-#                     'success': True,
-#                     'action': 'on',
-#                     'message': 'Peristaltic pump turned on'
-#                 }
-#
-#         else: # off
-#             pump.off()
-#
-#             with state_lock:
-#                 pump_state['active'] = False
-#                 pump_state['duration'] = None
-#
-#             response = {
-#                 'success': True,
-#                 'action': 'off',
-#                 'message': 'Peristaltic pump turned off'
-#             }
-#
-#         emit('pump:response', response)
-#         broadcast_status_update('pump', pump_state.copy())
-#
-#     except Exception as e:
-#         emit('error', {'message': str(e), 'device': 'pump'})
+
+@socketio.on('pump:control')
+def handle_pump_control(data):
+    """Control peristaltic pump"""
+    try:
+        if not data or 'action' not in data:
+            emit('error', {'message': 'Missing action parameter', 'device': 'pump'})
+            return
+
+        if not data or 'duration' not in data:
+            emit('error', {'message': 'Missing duration parameter', 'device': 'pump'})
+            return
+
+        action = data['action'].lower()
+        duration = data.get('duration', None)
+
+        if action not in ['on', 'off']:
+            emit('error', {'message': 'Action must be on or off', 'device': 'pump'})
+            return
+
+        client_sid = request.sid
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(PUMP_PIN, GPIO.OUT)
+        GPIO.output(PUMP_PIN, GPIO.LOW)
+
+        if action == 'on':
+            GPIO.output(PUMP_PIN, GPIO.HIGH)
+
+            with state_lock:
+                pump_state['active'] = True
+                pump_state['start_time'] = time.time()
+                pump_state['duration'] = duration
+
+            if duration and duration > 0:
+                def auto_stop_pump():
+                    try:
+                        time.sleep(float(duration))
+                        GPIO.output(PUMP_PIN, GPIO.LOW)
+                        with state_lock:
+                            pump_state['active'] = False
+                        broadcast_status_update('pump', pump_state.copy())
+
+                        message = f'Peristaltic pump turned on for {duration} seconds'
+                        response = {
+                            'success': True,
+                            'action': 'on',
+                            'duration': duration,
+                            'message': message
+                        }
+
+                        socketio.emit('pump:response', response, room=client_sid, namespace='/')
+                        broadcast_status_update('pump', extruder_servo_state.copy())
+                    except Exception as e:
+                        socketio.emit('error', {'message': str(e), 'device': 'pump'}, room=client_sid, namespace='/')
+
+                threading.Thread(target=auto_stop_pump, daemon=True).start()
+
+        else:
+            GPIO.output(PUMP_PIN, GPIO.LOW)
+
+            with state_lock:
+                pump_state['active'] = False
+                pump_state['duration'] = None
+
+            response = {
+                'success': True,
+                'action': 'off',
+                'message': 'Peristaltic pump turned off'
+            }
+
+        emit('pump:response', response)
+        broadcast_status_update('pump', pump_state.copy())
+
+    except Exception as e:
+        emit('error', {'message': str(e), 'device': 'pump'})
 
 
 # ============= Cleanup and Main =============
 
 def cleanup():
     """Cleanup function to stop all devices on exit"""
-    # needle_servo.close()
-    # pole_servo.close()
-    # slider_servo.close()
-    # extruder_servo.close()
-    # sliding_motor.stop()
-    # extruding_motor.stop()
-    # smoker.off()
-    # pump.off()
+    GPIO.output(SMOKER_PIN, GPIO.LOW)
+    GPIO.output(PUMP_PIN, GPIO.LOW)
+    GPIO.cleanup()
+
     if camera_available and camera_state['recording']:
         try:
             camera.stop_recording()
