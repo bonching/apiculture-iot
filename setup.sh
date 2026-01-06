@@ -22,11 +22,11 @@ mkdir -p /home/apiculture/py_env
 
 # Create and activate the BME280 virtual environment
 # rm -rf /home/apiculture/py_env/bme280_venv
-# pip cache purge
-# rm -rf ~/.cache/pip
 python3 -m venv /home/apiculture/py_env/bme280_venv
 source /home/apiculture/py_env/bme280_venv/bin/activate
 pip3 install --upgrade pip setuptools wheel
+# pip3 cache purge
+# rm -rf ~/.cache/pip
 
 # Re-install system packages (as specified, even if redundant)
 pip3 install RPi.GPIO
