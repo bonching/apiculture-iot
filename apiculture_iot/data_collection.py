@@ -12,6 +12,7 @@ import os
 from datetime import datetime
 
 
+DATA_COLLECTION_INTERVAL = 60*5
 API_URL = 'http://192.168.68.106:8081/api/images'
 # Storage directories
 PHOTO_DIR = "/home/apiculture/photos"
@@ -119,9 +120,9 @@ def handle_get_health():
 @socketio.on('camera:capture')
 def handle_camera_capture(data):
     """Capture a photo"""
-    # if not camera_available:
-    #     emit('error', {'message': 'Camera is not available', 'device': 'camera'})
-    #     return
+    if not camera_available:
+        emit('error', {'message': 'Camera is not available', 'device': 'camera'})
+        return
 
     try:
         data = data or {}
@@ -138,18 +139,9 @@ def handle_camera_capture(data):
         camera.capture_file(filepath)
         camera.stop()
 
-        # Extract the base filename and extension
-        filename = os.path.basename(filepath)
-        base_name = filename.rsplit('.', 1)[0]
-        extension = filename.rsplit('.', 1)[1] if '.' in filepath else ''
-
-        # Create new filename with timestamp
-        current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
-        new_filename = f"{base_name}_{current_time}.{extension}"
-
         with open(filepath, 'rb') as image_file:
             # Create a dictionary for the files to be sent, using the new filename
-            files = {'image': (new_filename, image_file, 'image/jpeg')}
+            files = {'image': (filename, image_file, 'image/jpeg')}
 
             try:
                 # Send the POST request
@@ -280,6 +272,11 @@ def cleanup():
     print('All devices stopped and cleaned up')
 
 
+# ============= data collection =============
+def execute_data_collection():
+    time.sleep(DATA_COLLECTION_INTERVAL)
+    print("Data collection interval reached, executing data collection...")
+
 
 if __name__ == '__main__':
     import atexit
@@ -302,3 +299,6 @@ if __name__ == '__main__':
     print("\n\n\n")
 
     socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)
+
+    # Execute data collection in a fixed interval
+    threading.Thread(target=execute_data_collection, daemon=True).start()
