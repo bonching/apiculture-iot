@@ -688,6 +688,9 @@ def handle_camera_video(data):
 @socketio.on('smoker:control')
 def handle_smoker_control(data):
     """Control electric smoker"""
+
+    print("Smoker:control - ", data)
+
     try:
         if not data or 'action' not in data:
             emit('error', {'message': 'Missing action parameter', 'device': 'smoker'})
@@ -766,6 +769,9 @@ def handle_smoker_control(data):
 @socketio.on('pump:control')
 def handle_pump_control(data):
     """Control peristaltic pump"""
+
+    print("Pump:control - ", data)
+
     try:
         if not data or 'action' not in data:
             emit('error', {'message': 'Missing action parameter', 'device': 'pump'})
