@@ -3,7 +3,7 @@ import time
 
 # Setup
 GPIO.setmode(GPIO.BCM)
-PUMP_PIN = 18  # GPIO 18
+PUMP_PIN = 24  # GPIO 24
 GPIO.setup(PUMP_PIN, GPIO.OUT)
 GPIO.output(PUMP_PIN, GPIO.LOW)  # Start off
 
