@@ -2,7 +2,7 @@ from gpiozero import AngularServo
 from time import sleep
 
 # Initialize servo on (adjust if wired differently)
-GPIO_PIN = 18
+GPIO_PIN = 22
 servo = AngularServo(GPIO_PIN, min_angle=-90, max_angle=90)  # For 360: Treat as speed; for 180: 0-180
 
 print(f"SG92R 360 Test on GPIO PIN: {GPIO_PIN} - Continuous rotation (Ctrl+C to stop)")
