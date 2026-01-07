@@ -850,6 +850,7 @@ def handle_pump_control(data):
 
 def cleanup():
     """Cleanup function to stop all devices on exit"""
+    GPIO.setmode(GPIO.BCM)
     GPIO.output(SMOKER_PIN, GPIO.LOW)
     GPIO.output(PUMP_PIN, GPIO.LOW)
     GPIO.cleanup()
