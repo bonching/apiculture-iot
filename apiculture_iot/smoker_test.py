@@ -3,7 +3,7 @@ import time
 
 # Setup
 GPIO.setmode(GPIO.BCM)
-SMOKER_PIN = 17  # GPIO 17
+SMOKER_PIN = 23  # GPIO 23
 GPIO.setup(SMOKER_PIN, GPIO.OUT)
 GPIO.output(SMOKER_PIN, GPIO.LOW)  # Start off
 
