@@ -157,9 +157,9 @@ def capture_and_analyze_image():
 
             try:
                 print(f"Posting image to API for threat detection: {DEFENSE_API_URL}")
-                response = requests.post(DEFENSE_API_URL, files=files, data=data, timeout=60)
+                response = requests.post(DEFENSE_API_URL, files=files, data=data, timeout=30)
 
-                if response.status_code == 200:
+                if response.status_code == 201:
                     print("Threat detection completed successfully!")
                     print(f"Response: {response.text}")
 
