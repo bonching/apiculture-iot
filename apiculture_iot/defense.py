@@ -187,8 +187,8 @@ def capture_and_analyze_image():
                     return False, False
 
             except requests.exceptions.RequestException as e:
-            print(f"Error posting image to API: {e}")
-            return False, False
+                print(f"Error posting image to API: {e}")
+                return False, False
 
     except Exception as e:
         print(f"Error capturing image: {e}")
