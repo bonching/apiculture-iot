@@ -10,10 +10,21 @@ import threading
 import time
 import os
 from datetime import datetime
+from gpiozero import AngularServo
+import board
+import adafruit_bme280.basic as adafruit_bme280
 
 
 DATA_COLLECTION_INTERVAL = 60*5
-API_URL = 'http://192.168.68.106:8081/api/images'
+IMAGE_API_URL = 'http://192.168.68.106:8081/api/images'
+SENSOR_DATE_API_URL = 'http://192.168.68.106:8081/api/sensor-data'
+
+#GPIO Configuration
+SERVO_PIN = 18
+
+# BME280 Configuration
+BME280_I2C_ADDRESS = 0x76 # Default I2C address for BME280 (use 0x77 if needed)
+
 # Storage directories
 PHOTO_DIR = "/home/apiculture/photos"
 VIDEO_DIR = "/home/apiculture/videos"
@@ -30,6 +41,16 @@ except Exception as e:
     print(f"Error initializing camera: {e}")
     camera = None
     camera_available = False
+
+# Initialize servo for data collection
+try:
+    data_collection_servo = AngularServo(SERVO_PIN, min_angle=-90, max_angle=90)
+    servo_available = True
+    print("Servo initialized on GPIO PIN: ", SERVO_PIN)
+except Exception as e:
+    print(f"Error initializing servo: {e}")
+    data_collection_servo = None
+    servo_available = False
 
 os.makedirs(PHOTO_DIR, exist_ok=True)
 os.makedirs(VIDEO_DIR, exist_ok=True)
@@ -142,10 +163,11 @@ def handle_camera_capture(data):
         with open(filepath, 'rb') as image_file:
             # Create a dictionary for the files to be sent, using the new filename
             files = {'image': (filename, image_file, 'image/jpeg')}
+            data = {'context': 'data_collection'}
 
             try:
                 # Send the POST request
-                response = requests.post(API_URL, files=files)
+                response = requests.post(IMAGE_API_URL, files=files, data=data)
 
                 # Check the response
                 if response.status_code == 200:
@@ -269,13 +291,123 @@ def cleanup():
             camera.stop_recording()
         except:
             pass
+
+    if servo_available:
+        try:
+            data_collection_servo.angle = 0 # Return to neutral position
+            time.sleep(0.5)
+            data_collection_servo.close()
+        except:
+            pass
+
     print('All devices stopped and cleaned up')
 
 
 # ============= data collection =============
 def execute_data_collection():
-    time.sleep(DATA_COLLECTION_INTERVAL)
-    print("Data collection interval reached, executing data collection...")
+    """
+    Execute data collection process:
+    1. Move servo to slide-open the sensor cover
+    2. Collect BME280 sensor data and post to API
+    3. Capture image and post to API
+    """
+    while True:
+        try:
+            time.sleep(DATA_COLLECTION_INTERVAL)
+            print("=" * 60)
+            print("Data collection interval reached, executing data collection...")
+            print("=" * 60)
+
+            # Step 1: Move the servo
+            if servo_available:
+                try:
+                    print("Step 1: Moving servo to slide-open the sensor cover...")
+                    data_collection_servo.angle = 90
+                    time.sleep(2)
+                    print("Servo positioned at 90 degrees")
+                except Exception as e:
+                    print(f"Error moving servo: {e}")
+            else:
+                print("Servo not available, skipping servo movement...")
+
+            # Step 2: Collect BME sensor data and post to API
+            try:
+                print("\nStep 2: Collecting BME280 sensor data...")
+
+                # Initialize I2C bus
+                try:
+                    i2c = board.I2C()
+                except Exception as e:
+                    print(f"Failed to initialize I2C: {e}")
+                    raise
+
+                # Initialize BME280 sensor
+                try:
+                    sensor = adafruit_bme280.Adafruit_BME280_I2C(i2c, address=BME280_I2C_ADDRESS)
+                except Exception as e:
+                    print(f"Failed to initialize BME280: {e}")
+                    print("Check I2C connections and address (0x76 or 0x77)")
+                    raise
+
+                # Read sensor data
+                temperature = round(sensor.temperature, 2)
+                humidity = round(sensor.humidity, 2)
+                pressure = round(sensor.pressure, 2)
+
+                print(f"Temperature: {temperature} C")
+                print(f"Humidity: {humidity}%")
+                print(f"Pressure: {pressure} hPa")
+
+                # Prepare sensor data payload
+                payload = {
+                    'temperature': temperature,
+                    'humidity': humidity,
+                    'pressure': pressure
+                }
+
+                # Post sensor data to API
+                try:
+                    response = requests.post(SENSOR_DATE_API_URL, json=payload)
+                    if response.status_code == 200:
+                        print("Sensor data posted successfully!")
+                        print("Response:", response.text)
+                    else:
+                        print(f"Failed to post sensor data. Status code: {response.status_code}")
+                        print("Response:", response.text)
+                except requests.exceptions.RequestException as e:
+                    print(f"An error occurred: {e}")
+
+            except Exception as e:
+                print(f"Error collecting sensor data: {e}")
+
+            # Step 3: Capture image and post to API
+            if camera_available:
+                try:
+                    print("\nStep 3: Capturing image...")
+                    handle_camera_capture({'context': 'data_collection'})
+                except Exception as e:
+                    print(f"Error capturing image: {e}")
+            else:
+                print("Camera not available, skipping image capture...")
+
+            # Return servo to neutral position
+            if servo_available:
+                try:
+                    print("\nStep 4: Returning servo to neutral position...")
+                    data_collection_servo.angle = 0 # Return to neutral position
+                    time.sleep(1)
+                    print("Servo returned to neutral position")
+                except Exception as e:
+                    print(f"Error returning servo to neutral position: {e}")
+
+            print("Data collection completed successfully!")
+            print("=" * 60)
+
+        except Exception as e:
+            print(f"Error executing data collection: {e}")
+            # Continue running despite error
+            pass
+
 
 
 if __name__ == '__main__':
@@ -298,7 +430,7 @@ if __name__ == '__main__':
     print("=" * 60)
     print("\n\n\n")
 
-    socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)
-
-    # Execute data collection in a fixed interval
+    # Execute data collection in a fixed interval (start as background thread)
     threading.Thread(target=execute_data_collection, daemon=True).start()
+
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)
