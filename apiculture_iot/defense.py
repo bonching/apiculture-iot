@@ -21,9 +21,9 @@ from picamera2 import Picamera2
 from gpiozero import OutputDevice, AngularServo
 
 # Configuration
-DEFENSE_CHECK_INTERVAL = 60 * 5
+DEFENSE_CHECK_INTERVAL = 60 * 1
 DEFENSE_API_URL = 'http://192.168.68.106:8081/api/images'
-WATER_SPRINKLER_DURATION = 10
+WATER_SPRINKLER_DURATION = 2
 
 # GPIO Configuration
 SPRINKLER_PIN = 23
@@ -46,7 +46,7 @@ except Exception as e:
 
 # Initialize water sprinkler (simple on/off control)
 try:
-    sprinkler = OutputDevice(27)
+    sprinkler = OutputDevice(SPRINKLER_PIN)
     sprinkler_available = True
     print(f"Water sprinkler initialized on GPIO PIN: {SPRINKLER_PIN}")
 except Exception as e:
