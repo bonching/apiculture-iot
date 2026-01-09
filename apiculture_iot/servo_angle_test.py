@@ -26,7 +26,7 @@ print(f"Example: python3 servo.py 22 45")
 print("-" * 60)
 
 
-servo = AngularServo(GPIO_PIN, min_angle=-90, max_angle=90, initial_angle=0)
+servo = AngularServo(GPIO_PIN, min_angle=-180, max_angle=180, initial_angle=0)
 try:
     servo.angle = angle
     sleep(1)
