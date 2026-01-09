@@ -16,8 +16,8 @@ import adafruit_bme280.basic as adafruit_bme280
 
 
 DATA_COLLECTION_INTERVAL = 60*1
-IMAGE_API_URL = 'http://192.168.68.106:8081/api/images'
-SENSOR_DATE_API_URL = 'http://192.168.68.106:8081/api/sensor-data'
+IMAGE_API_URL = 'http://192.168.68.114:8081/api/images'
+SENSOR_DATE_API_URL = 'http://192.168.68.114:8081/api/sensor-data'
 
 #GPIO Configuration
 SERVO_PIN = 18
