@@ -16,7 +16,7 @@ def solenoid_valve_on(duration=5):
 
 try:
     # Example: Run for 5 seconds
-    solenoid_valve_on(2)
+    solenoid_valve_on(5)
 except KeyboardInterrupt:
     GPIO.cleanup()
     print("Cleanup complete.")
