@@ -20,15 +20,15 @@ if len(sys.argv) > 2:
 else:
     duration = 2
 
-servo = AngularServo(GPIO_PIN, min_angle=-90, max_angle=90)  # For 360: Treat as speed; for 180: 0-180
-
 print(f"\n\nSG92R 360 Test on GPIO PIN: {GPIO_PIN}, duration: {duration} seconds")
 print(f"Usage: python3 servo.py <GPIO_PIN> (default: 18) <duration> (default: 2 seconds)")
 print(f"Example: python3 servo.py 22 5")
 print("-" * 60)
 
+
+servo = AngularServo(GPIO_PIN, min_angle=-90, max_angle=90, initial_angle=None)
 try:
-    servo.angle = 10
+    servo.angle = 45
     sleep(duration)
 finally:
     servo.angle = 0  # Stop on exit
