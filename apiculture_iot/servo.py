@@ -1,4 +1,5 @@
 from gpiozero import AngularServo
+import RPi.GPIO as GPIO
 from time import sleep
 import sys
 
@@ -34,4 +35,5 @@ finally:
     servo.angle = 0
     servo.detach()
     servo.close()
+    GPIO.cleanup()
 print("\nCompleted.")
