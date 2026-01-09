@@ -28,9 +28,9 @@ print("-" * 60)
 
 servo = AngularServo(GPIO_PIN, min_angle=-90, max_angle=90, initial_angle=None)
 try:
-    servo.angle = 45
+    servo.angle = 90
     sleep(duration)
 finally:
-    servo.angle = 0  # Stop on exit
+    servo.angle = 0
     servo.close()
 print("\nCompleted.")
