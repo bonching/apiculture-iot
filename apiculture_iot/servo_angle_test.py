@@ -13,23 +13,23 @@ else:
 
 if len(sys.argv) > 2:
     try:
-        duration = int(sys.argv[2])
+        angle = int(sys.argv[2])
     except ValueError:
-        print(f"Invalid duration: {sys.argv[2]}")
+        print(f"Invalid angle: {sys.argv[2]}")
         exit(1)
 else:
-    duration = 2
+    angle = 90
 
-print(f"\n\nSG92R 360 Test on GPIO PIN: {GPIO_PIN}, duration: {duration} seconds")
-print(f"Usage: python3 servo.py <GPIO_PIN> (default: 18) <duration> (default: 2 seconds)")
-print(f"Example: python3 servo.py 22 5")
+print(f"\n\nSG92R 360 Test on GPIO PIN: {GPIO_PIN}, angle: {angle} degrees")
+print(f"Usage: python3 servo.py <GPIO_PIN> (default: 18) <angle> (default: 90 degrees)")
+print(f"Example: python3 servo.py 22 45")
 print("-" * 60)
 
 
 servo = AngularServo(GPIO_PIN, min_angle=-90, max_angle=90, initial_angle=0)
 try:
-    servo.angle = 90
-    sleep(duration)
+    servo.angle = angle
+    sleep(1)
     servo.angle = 0
     sleep(0.5)
 finally:

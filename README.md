@@ -22,7 +22,7 @@ pip3 install flask-socketio
 
 export PYTHONPATH=/usr/lib/python3/dist-packages:$PYTHONPATH
 
-python3 /home/apiculture/apiculture-iot/apiculture_iot/servo.py 18 10
+python3 /home/apiculture/apiculture-iot/apiculture_iot/servo_angle_test.py 18 45
 python3 /home/apiculture/apiculture-iot/apiculture_iot/harvest.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/camera.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/pump_test.py
