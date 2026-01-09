@@ -18,7 +18,8 @@ import time
 import os
 from datetime import datetime
 from picamera2 import Picamera2
-from gpiozero import OutputDevice, AngularServo
+from gpiozero import AngularServo
+import RPi.GPIO as GPIO
 
 # Configuration
 DEFENSE_CHECK_INTERVAL = 60 * 1
@@ -34,6 +35,9 @@ IMAGE_PATH = "/home/apiculture/photos"
 
 os.makedirs(IMAGE_PATH, exist_ok=True)
 
+# Initialize sprinkler
+sprinkler_available = True
+
 # Initialize camera
 try:
     camera = Picamera2()
@@ -43,16 +47,6 @@ except Exception as e:
     print(f"Error initializing camera: {e}")
     camera = None
     camera_available = False
-
-# Initialize water sprinkler (simple on/off control)
-try:
-    sprinkler = OutputDevice(SPRINKLER_PIN)
-    sprinkler_available = True
-    print(f"Water sprinkler initialized on GPIO PIN: {SPRINKLER_PIN}")
-except Exception as e:
-    print(f"Error initializing water sprinkler: {e}")
-    sprinkler = None
-    sprinkler_available = False
 
 # Initialize camera rotation servo
 try:
@@ -81,8 +75,9 @@ def activate_sprinkler():
     try:
         print(f"Activating water sprinkler for {WATER_SPRINKLER_DURATION} seconds")
 
-        # Enable sprinkler
-        sprinkler.on()
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(SPRINKLER_PIN, GPIO.OUT)
+        GPIO.output(SPRINKLER_PIN, GPIO.HIGH)
 
         # Update statistics
         defense_stat['total_sprinkler_activation'] += 1
@@ -91,7 +86,7 @@ def activate_sprinkler():
         time.sleep(WATER_SPRINKLER_DURATION)
 
         # Disable sprinkler
-        sprinkler.off()
+        GPIO.output(SPRINKLER_PIN, GPIO.LOW)
 
         print("Water sprinkler deactivated")
 
@@ -100,7 +95,7 @@ def activate_sprinkler():
     except Exception as e:
         print(f"Error activating water sprinkler: {e}")
         try:
-            sprinkler.off()
+            GPIO.output(SPRINKLER_PIN, GPIO.LOW)
         except:
             pass
         return False
@@ -134,7 +129,7 @@ def capture_and_analyze_image():
 
     try:
         # Rotate camera to scanning position (0 degrees to center)
-        rotate_camera(0)
+        rotate_camera(45)
 
         # Generate filename with timestamp
         filename = f'defense_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg'
@@ -258,7 +253,8 @@ def cleanup():
 
     if sprinkler_available:
         try:
-            sprinkler.off()
+            GPIO.output(SPRINKLER_PIN, GPIO.LOW)
+            GPIO.cleanup()
             print("Water sprinkler deactivated successfully.")
         except:
             pass
