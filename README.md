@@ -27,6 +27,7 @@ python3 /home/apiculture/apiculture-iot/apiculture_iot/harvest.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/camera.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/pump_test.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/smoker_test.py
+python3 /home/apiculture/apiculture-iot/apiculture_iot/solenoid_valve_test.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/bme280_adafruit_reader2.py
 ```
 
