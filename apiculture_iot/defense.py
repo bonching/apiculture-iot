@@ -22,7 +22,7 @@ from gpiozero import AngularServo
 import RPi.GPIO as GPIO
 
 # Configuration
-DEFENSE_CHECK_INTERVAL = 60 * 1
+DEFENSE_CHECK_INTERVAL = 30 * 1
 DEFENSE_API_URL = 'http://192.168.68.106:8081/api/images'
 WATER_SPRINKLER_DURATION = 2
 
