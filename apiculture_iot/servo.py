@@ -32,5 +32,6 @@ try:
     sleep(duration)
 finally:
     servo.angle = 0
+    servo.detach()
     servo.close()
 print("\nCompleted.")
