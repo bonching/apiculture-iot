@@ -37,19 +37,19 @@ logger.setLevel(logging.INFO)
 
 
 # Configuration
-DEFENSE_CHECK_INTERVAL = 5 * 60  # 5 minutes
+DEFENSE_CHECK_INTERVAL = 1 * 30
 DEFENSE_API_URL = f'http://{API_HOST}:{API_PORT}/api/images'
 WATER_SPRINKLER_DURATION = 2
+
+# GPIO Configuration
+SPRINKLER_PIN = 23
+CAMERA_SERVO_PIN = 22
 
 # Servo and capture configuration
 SERVO_MIN_ANGLE = 0
 SERVO_MAX_ANGLE = 180
 NUM_CAPTURE_POINTS = 5  # Number of images to capture during sweep
 SWEEP_STEP = (SERVO_MAX_ANGLE - SERVO_MIN_ANGLE) // (NUM_CAPTURE_POINTS - 1) if NUM_CAPTURE_POINTS > 1 else 0
-
-# GPIO Configuration
-SPRINKLER_PIN = 23
-CAMERA_SERVO_PIN = 22
 
 # Storage directories
 IMAGE_PATH = "/home/apiculture/photos"
