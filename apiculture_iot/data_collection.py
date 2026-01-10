@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import random
 import sys
 
 from flask import Flask, request
@@ -9,10 +9,30 @@ import requests
 import threading
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from gpiozero import AngularServo
 import board
 import adafruit_bme280.basic as adafruit_bme280
+
+from apiculture_iot.util.app_util import AppUtil
+from apiculture_iot.util.config import DATA_COLLECTION_METRICS, API_HOST, API_PORT
+
+util = AppUtil()
+
+from apiculture_iot.util.mongo_client import ApicultureMongoClient
+mongo = ApicultureMongoClient()
+
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('apiculture-iot.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger('data_collection')
+logger.setLevel(logging.INFO)
 
 
 DATA_COLLECTION_INTERVAL = 60*1
@@ -38,7 +58,7 @@ try:
     camera = Picamera2()
     camera_available = True
 except Exception as e:
-    print(f"Error initializing camera: {e}")
+    logger.error(f"Error initializing camera: {e}")
     camera = None
     camera_available = False
 
@@ -46,9 +66,9 @@ except Exception as e:
 try:
     data_collection_servo = AngularServo(SERVO_PIN, min_angle=-90, max_angle=90)
     servo_available = True
-    print("Servo initialized on GPIO PIN: ", SERVO_PIN)
+    logger.info("Servo initialized on GPIO PIN: ", SERVO_PIN)
 except Exception as e:
-    print(f"Error initializing servo: {e}")
+    logger.error(f"Error initializing servo: {e}")
     data_collection_servo = None
     servo_available = False
 
@@ -86,7 +106,7 @@ def handle_connect():
     client_id = request.sid
 
     connected_clients.add(client_id)
-    print(f"Client connected: {client_id} (Total clients: {len(connected_clients)})")
+    logger.info(f"Client connected: {client_id} (Total clients: {len(connected_clients)})")
 
     # Send welcome message with current device states
     emit('connected', {
@@ -107,7 +127,7 @@ def handle_disconnect():
     """Handle client disconnection"""
     client_id = request.sid
     connected_clients.remove(client_id)
-    print(f"Client disconnected: {client_id} (Total clients: {len(connected_clients)})")
+    logger.info(f"Client disconnected: {client_id} (Total clients: {len(connected_clients)})")
 
 
 @socketio.on('get:status')
@@ -163,7 +183,7 @@ def handle_camera_capture(data):
         with open(filepath, 'rb') as image_file:
             # Create a dictionary for the files to be sent, using the new filename
             files = {'image': (filename, image_file, 'image/jpeg')}
-            data = {'context': 'data_collection'}
+            data = {'context': 'harvest'} if 'context' not in data else data
 
             try:
                 # Send the POST request
@@ -171,14 +191,14 @@ def handle_camera_capture(data):
 
                 # Check the response
                 if response.status_code == 200:
-                    print("Image uploaded successfully!")
-                    print("Response:", response.text)
+                    logger.info("Image uploaded successfully!")
+                    logger.info("Response:", response.text)
                 else:
-                    print(f"Failed to upload image. Status code: {response.status_code}")
-                    print("Response:", response.text)
+                    logger.info(f"Failed to upload image. Status code: {response.status_code}")
+                    logger.info("Response:", response.text)
 
             except requests.exceptions.RequestException as e:
-                print(f"An error occurred: {e}")
+                logger.error(f"An error occurred: {e}")
 
         with state_lock:
             camera_state['last_photo'] = filepath
@@ -300,7 +320,7 @@ def cleanup():
         except:
             pass
 
-    print('All devices stopped and cleaned up')
+    logger.info('All devices stopped and cleaned up')
 
 
 # ============= data collection =============
@@ -314,49 +334,77 @@ def execute_data_collection():
     while True:
         try:
             time.sleep(DATA_COLLECTION_INTERVAL)
-            print("=" * 60)
-            print("Data collection interval reached, executing data collection...")
-            print("=" * 60)
+            logger.info("=" * 60)
+            logger.info("Data collection interval reached, executing data collection...")
+            logger.info("=" * 60)
 
             # Step 1: Move the servo
             if servo_available:
                 try:
-                    print("Step 1: Moving servo to slide-open the sensor cover...")
+                    logger.info("Step 1: Moving servo to slide-open the sensor cover...")
                     data_collection_servo.angle = 90
                     time.sleep(2)
-                    print("Servo positioned at 90 degrees")
+                    logger.info("Servo positioned at 90 degrees")
                 except Exception as e:
-                    print(f"Error moving servo: {e}")
+                    logger.error(f"Error moving servo: {e}")
             else:
-                print("Servo not available, skipping servo movement...")
+                logger.info("Servo not available, skipping servo movement...")
 
             # Step 2: Collect BME sensor data and post to API
             try:
-                print("\nStep 2: Collecting BME280 sensor data...")
+                logger.info("\nStep 2: Collecting BME280 sensor data...")
 
                 # Initialize I2C bus
                 try:
                     i2c = board.I2C()
+
+                    # Initialize BME280 sensor
+                    try:
+                        sensor = adafruit_bme280.Adafruit_BME280_I2C(i2c, address=BME280_I2C_ADDRESS)
+
+                        # Read sensor data
+                        temperature = round(sensor.temperature, 2)
+                        humidity = round(sensor.humidity, 2)
+                        pressure = round(sensor.pressure, 2)
+                    except Exception as e:
+                        logger.error(f"Failed to initialize BME280: {e}")
+                        logger.error("Check I2C connections and address (0x76 or 0x77)")
+                        raise
                 except Exception as e:
-                    print(f"Failed to initialize I2C: {e}")
-                    raise
+                    logger.error(f"Failed to initialize I2C: {e}")
+                    logger.error(f"Generating random sensor data for testing")
 
-                # Initialize BME280 sensor
-                try:
-                    sensor = adafruit_bme280.Adafruit_BME280_I2C(i2c, address=BME280_I2C_ADDRESS)
-                except Exception as e:
-                    print(f"Failed to initialize BME280: {e}")
-                    print("Check I2C connections and address (0x76 or 0x77)")
-                    raise
+                    def generate_random_readings(data_type):
+                        base_value = DATA_COLLECTION_METRICS[data_type]['base_value']
+                        variance = DATA_COLLECTION_METRICS[data_type]['variance']
 
-                # Read sensor data
-                temperature = round(sensor.temperature, 2)
-                humidity = round(sensor.humidity, 2)
-                pressure = round(sensor.pressure, 2)
+                        if base_value is not None and variance is not None:
+                            anomaly_rate = random.uniform(0.01, 100.00)
+                            has_anomaly = anomaly_rate < DATA_COLLECTION_METRICS[data_type]['anomaly_rate']
 
-                print(f"Temperature: {temperature} C")
-                print(f"Humidity: {humidity}%")
-                print(f"Pressure: {pressure} hPa")
+                            seed = (random.random() - 0.5)
+                            value = round(
+                                (base_value + (seed * variance) + (2 * variance if has_anomaly else 0)) * 10) / 10
+                            data = [
+                                {
+                                    'datetime': datetime.now(timezone.utc).isoformat(timespec='milliseconds'),
+                                    'dataTypeId': util.objectid_to_str(data_type['_id']),
+                                    'value': value
+                                }
+                            ]
+                            if has_anomaly:
+                                logger.info(f"Sensor reading within the expected threshold: {str(data_type)}")
+                            else:
+                                logger.info(f"Sensor reading with anomaly: {str(data_type)}")
+                            return data
+
+                    temperature = generate_random_readings('temperature')
+                    humidity = generate_random_readings('humidity')
+                    pressure = generate_random_readings('barometric_pressure')
+
+                logger.info(f"Temperature: {temperature} C")
+                logger.info(f"Humidity: {humidity}%")
+                logger.info(f"Pressure: {pressure} hPa")
 
                 # Prepare sensor data payload
                 payload = {
@@ -369,42 +417,42 @@ def execute_data_collection():
                 try:
                     response = requests.post(SENSOR_DATE_API_URL, json=payload)
                     if response.status_code == 200:
-                        print("Sensor data posted successfully!")
-                        print("Response:", response.text)
+                        logger.info("Sensor data posted successfully!")
+                        logger.info("Response:", response.text)
                     else:
-                        print(f"Failed to post sensor data. Status code: {response.status_code}")
-                        print("Response:", response.text)
+                        logger.info(f"Failed to post sensor data. Status code: {response.status_code}")
+                        logger.info("Response:", response.text)
                 except requests.exceptions.RequestException as e:
-                    print(f"An error occurred: {e}")
+                    logger.error(f"An error occurred: {e}")
 
             except Exception as e:
-                print(f"Error collecting sensor data: {e}")
+                logger.error(f"Error collecting sensor data: {e}")
 
             # Step 3: Capture image and post to API
             if camera_available:
                 try:
-                    print("\nStep 3: Capturing image...")
+                    logger.info("\nStep 3: Capturing image...")
                     handle_camera_capture({'context': 'data_collection'})
                 except Exception as e:
-                    print(f"Error capturing image: {e}")
+                    logger.error(f"Error capturing image: {e}")
             else:
-                print("Camera not available, skipping image capture...")
+                logger.info("Camera not available, skipping image capture...")
 
             # Return servo to neutral position
             if servo_available:
                 try:
-                    print("\nStep 4: Returning servo to neutral position...")
+                    logger.info("\nStep 4: Returning servo to neutral position...")
                     data_collection_servo.angle = 0 # Return to neutral position
                     time.sleep(1)
-                    print("Servo returned to neutral position")
+                    logger.info("Servo returned to neutral position")
                 except Exception as e:
-                    print(f"Error returning servo to neutral position: {e}")
+                    logger.error(f"Error returning servo to neutral position: {e}")
 
-            print("Data collection completed successfully!")
-            print("=" * 60)
+            logger.info("Data collection completed successfully!")
+            logger.info("=" * 60)
 
         except Exception as e:
-            print(f"Error executing data collection: {e}")
+            logger.error(f"Error executing data collection: {e}")
             # Continue running despite error
             pass
 
@@ -417,18 +465,18 @@ if __name__ == '__main__':
     atexit.register(cleanup)
 
     def signal_handler(signal, frame):
-        print('Shutting down...')
+        logger.info('Shutting down...')
         cleanup()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    print("\n\n\n")
-    print("=" * 60)
-    print("Starting Apiculture IoT Websocket Control API...")
-    print("=" * 60)
-    print("\n\n\n")
+    logger.info("\n\n\n")
+    logger.info("=" * 60)
+    logger.info("Starting Apiculture IoT Websocket Control API...")
+    logger.info("=" * 60)
+    logger.info("\n\n\n")
 
     # Execute data collection in a fixed interval (start as background thread)
     threading.Thread(target=execute_data_collection, daemon=True).start()

@@ -1,0 +1,36 @@
+import logging
+from pymongo import MongoClient
+
+from apiculture_iot.util.config import MONGODB_URL
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('../apiculture-api.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger('mongo_client')
+logger.setLevel(logging.INFO)
+
+class ApicultureMongoClient():
+    def __init__(self):
+        try:
+            self.client = MongoClient(MONGODB_URL)
+            self.db = self.client['apiculture']  # Updated database name
+            self.farms_collection = self.db['farms']
+            self.hives_collection = self.db['hives']
+            self.sensors_collection = self.db['sensors']
+            self.data_types_collection = self.db['data_types']
+            self.metrics_collection = self.db['metrics']
+            self.alerts_collection = self.db['alerts']
+            self.image_collection = self.db['images']
+
+            self.client.server_info()
+            logger.info("Successfully connected to MongoDB")
+        except Exception as e:
+            logger.error(f"Failed to connect to MongoDB: {e}")
+            exit(1)
+
+
