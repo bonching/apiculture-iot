@@ -408,7 +408,7 @@ def execute_data_collection():
                         data = {
                             'dataTypeId': data_type_id,
                             'value': value,
-                            'datetime': datetime.now(timezone.utc)
+                            'datetime': datetime.now(timezone.utc).isoformat()
                         }
                         logger.info(f"Posting sensor data : {data}")
                         response = requests.post(SENSOR_DATA_API_URL, json=data)
