@@ -4,7 +4,9 @@ import time
 import requests
 import os
 
-URL = 'http://192.168.68.106:8081/api/images'
+from apiculture_iot.util.config import API_HOST, API_PORT
+
+URL = f'http://{API_HOST}:{API_PORT}/api/images'
 IMAGE_PATH = "/home/apiculture/Pictures/my_photo.jpg"
 
 
