@@ -390,18 +390,7 @@ def execute_data_collection():
                             seed = (random.random() - 0.5)
                             value = round(
                                 (base_value + (seed * variance) + (2 * variance if has_anomaly else 0)) * 10) / 10
-                            data = [
-                                {
-                                    'datetime': datetime.now(timezone.utc).isoformat(timespec='milliseconds'),
-                                    'dataTypeId': util.objectid_to_str(data_type['_id']),
-                                    'value': value
-                                }
-                            ]
-                            if has_anomaly:
-                                logger.info(f"Sensor reading within the expected threshold: {str(data_type)}")
-                            else:
-                                logger.info(f"Sensor reading with anomaly: {str(data_type)}")
-                            return data
+                            return value
 
                     temperature = generate_random_readings('temperature')
                     humidity = generate_random_readings('humidity')
