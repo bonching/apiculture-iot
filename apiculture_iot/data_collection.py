@@ -422,16 +422,16 @@ def execute_data_collection():
                 for sensor in sensors:
                     logger.info(f"sensor: {sensor}")
                     if 'temperature' in sensor['data_capture']:
-                        data_type = mongo.data_types_collection.find_one({'sensor_id': sensor['_id'], 'data_type': 'temperature'})
-                        if data_type:
+                        data_types = mongo.data_types_collection.find({'sensor_id': util.objectid_to_str(sensor['_id']), 'data_type': 'temperature'})
+                        for data_type in data_types:
                             post_sensor_data(util.objectid_to_str(data_type['_id']), temperature)
                     if 'humidity' in sensor['data_capture']:
-                        data_type = mongo.data_types_collection.find_one({'sensor_id': sensor['_id'], 'data_type': 'humidity'})
-                        if data_type:
+                        data_types = mongo.data_types_collection.find({'sensor_id': util.objectid_to_str(sensor['_id']), 'data_type': 'humidity'})
+                        for data_type in data_types:
                             post_sensor_data(util.objectid_to_str(data_type['_id']), humidity)
                     if 'barometric_pressure' in sensor['data_capture']:
-                        data_type = mongo.data_types_collection.find_one({'sensor_id': sensor['_id'], 'data_type': 'barometric_pressure'})
-                        if data_type:
+                        data_types = mongo.data_types_collection.find({'sensor_id': util.objectid_to_str(sensor['_id']), 'data_type': 'barometric_pressure'})
+                        for data_type in data_types:
                             post_sensor_data(util.objectid_to_str(data_type['_id']), barometric_pressure)
 
             except Exception as e:
