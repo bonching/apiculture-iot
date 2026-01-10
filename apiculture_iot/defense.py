@@ -109,6 +109,8 @@ def rotate_camera(angle):
         return False
 
     try:
+        GPIO.setmode(GPIO.BCM)
+
         # Set up PWM on the pin (50 Hz for standard servos)
         GPIO.setup(CAMERA_SERVO_PIN, GPIO.OUT)
         pwm = GPIO.PWM(CAMERA_SERVO_PIN, 50)  # 50 Hz frequency
