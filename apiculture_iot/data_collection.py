@@ -181,6 +181,8 @@ def handle_camera_capture(data):
         camera.capture_file(filepath)
         camera.stop()
 
+        client_id = request.sid
+
         with open(filepath, 'rb') as image_file:
             # Create a dictionary for the files to be sent, using the new filename
             files = {'image': (filename, image_file, 'image/jpeg')}
@@ -212,7 +214,7 @@ def handle_camera_capture(data):
             'message': f'Photo captured successfully'
         }
 
-        emit('camera:response', response)
+        socketio.emit('camera:response', response, room=client_id, namespace='/')
         broadcast_status_update('camera', camera_state.copy())
 
     except Exception as e:
