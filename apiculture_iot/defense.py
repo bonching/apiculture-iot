@@ -166,12 +166,14 @@ def sweep_servo_and_capture(direction_forward):
 
         # Determine sweep angles based on direction
         if direction_forward:
-            angles = list(range(SERVO_MIN_ANGLE, SERVO_MAX_ANGLE + 1, SWEEP_STEP * 2))
+            angles = list(range(SERVO_MIN_ANGLE, SERVO_MAX_ANGLE + 1, round(SWEEP_STEP / 5)))
+            angles_to_capture = list(range(SERVO_MIN_ANGLE, SERVO_MAX_ANGLE + 1, SWEEP_STEP))
         else:
-            angles = list(range(SERVO_MAX_ANGLE, SERVO_MIN_ANGLE - 1, -SWEEP_STEP * 2))
+            angles = list(range(SERVO_MAX_ANGLE, SERVO_MIN_ANGLE - 1, round(-SWEEP_STEP / 5)))
+            angles_to_capture = list(range(SERVO_MAX_ANGLE, SERVO_MIN_ANGLE - 1, -SWEEP_STEP))
 
         logger.info(f"Starting servo sweep {'forward' if direction_forward else 'backward'} "
-                    f"with {len(angles)} capture points")
+                    f"with {len(angles_to_capture)} capture points")
 
         # Start camera once for efficiency
         camera.start()
@@ -180,6 +182,9 @@ def sweep_servo_and_capture(direction_forward):
         threat_detected = False
         for i, angle in enumerate(angles):
             set_servo_angle(angle)
+            if angle not in angles_to_capture:
+                continue
+
             logger.debug(f"Servo at {angle} degrees (point {i+1}/{len(angles)})")
 
             # Capture image at this position
