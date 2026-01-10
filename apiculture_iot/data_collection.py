@@ -16,7 +16,7 @@ import board
 import adafruit_bme280.basic as adafruit_bme280
 
 from apiculture_iot.util.app_util import AppUtil
-from apiculture_iot.util.config import DATA_COLLECTION_METRICS, API_HOST, API_PORT
+from apiculture_iot.util.config import DATA_COLLECTION_METRICS, API_HOST, API_PORT, BEEHIVE_ID
 
 util = AppUtil()
 
@@ -37,8 +37,8 @@ logger.setLevel(logging.INFO)
 
 
 DATA_COLLECTION_INTERVAL = 60*1
-IMAGE_API_URL = 'http://192.168.68.114:8081/api/images'
-SENSOR_DATA_API_URL = 'http://192.168.68.114:8081/api/sensor-data'
+IMAGE_API_URL = f'http://{API_HOST}:{API_PORT}/api/images'
+SENSOR_DATA_API_URL = f'http://{API_HOST}:{API_PORT}/api/metrics'
 
 #GPIO Configuration
 SERVO_PIN = 18
@@ -369,7 +369,7 @@ def execute_data_collection():
                         # Read sensor data
                         temperature = round(sensor.temperature, 2)
                         humidity = round(sensor.humidity, 2)
-                        pressure = round(sensor.pressure, 2)
+                        barometric_pressure = round(sensor.pressure, 2)
                     except Exception as e:
                         logger.error(f"Failed to initialize BME280: {e}")
                         logger.error("Check I2C connections and address (0x76 or 0x77)")
@@ -394,31 +394,39 @@ def execute_data_collection():
 
                     temperature = generate_random_readings('temperature')
                     humidity = generate_random_readings('humidity')
-                    pressure = generate_random_readings('barometric_pressure')
+                    barometric_pressure = generate_random_readings('barometric_pressure')
 
                 logger.info(f"Temperature: {temperature} C")
                 logger.info(f"Humidity: {humidity}%")
-                logger.info(f"Pressure: {pressure} hPa")
+                logger.info(f"Barometric Pressure: {barometric_pressure} hPa")
 
-                # Prepare sensor data payload
-                payload = {
-                    'temperature': temperature,
-                    'humidity': humidity,
-                    'pressure': pressure
-                }
+                def post_sensor_data(data_type_id, value):
+                    try:
+                        data = {
+                            'dataTypeId': data_type_id,
+                            'value': value,
+                            'datetime': datetime.now(timezone.utc)
+                        }
+                        response = requests.post(SENSOR_DATA_API_URL, json=data)
+                        if response.status_code == 200:
+                            logger.info(f"Sensor data posted successfully : {data}")
+                    except Exception as e:
+                        logger.error(f"Error posting sensor data: {e}")
 
-                # Post sensor data to API
-                try:
-                    response = requests.post(SENSOR_DATA_API_URL, json=payload)
-                    if response.status_code == 200:
-                        logger.info("Sensor data posted successfully!")
-                        logger.info(f"Response: {response.text}")
-                    else:
-                        logger.info(f"Failed to post sensor data. Status code: {response.status_code}")
-                        logger.info(f"Response: {response.text}")
-                except requests.exceptions.RequestException as e:
-                    logger.error(f"An error occurred: {e}")
-                    traceback.print_exc()
+                sensors = list(mongo.sensors_collection.find({"beehive_id": BEEHIVE_ID, "active": True}))
+                for sensor in sensors:
+                    if 'temperature' in sensor['data_capture']:
+                        data_type = mongo.data_types_collection.find_one({'sensor_id': sensor['_id'], 'data_type': 'temperature'})
+                        if data_type:
+                            post_sensor_data(util.objectid_to_str(data_type['_id']), temperature)
+                    if 'humidity' in sensor['data_capture']:
+                        data_type = mongo.data_types_collection.find_one({'sensor_id': sensor['_id'], 'data_type': 'humidity'})
+                        if data_type:
+                            post_sensor_data(util.objectid_to_str(data_type['_id']), humidity)
+                    if 'barometric_pressure' in sensor['data_capture']:
+                        data_type = mongo.data_types_collection.find_one({'sensor_id': sensor['_id'], 'data_type': 'barometric_pressure'})
+                        if data_type:
+                            post_sensor_data(util.objectid_to_str(data_type['_id']), barometric_pressure)
 
             except Exception as e:
                 logger.error(f"Error collecting sensor data: {e}")
