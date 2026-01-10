@@ -411,7 +411,7 @@ def execute_data_collection():
                             'datetime': datetime.now(timezone.utc).isoformat()
                         }
                         logger.info(f"Posting sensor data : {data}")
-                        response = requests.post(SENSOR_DATA_API_URL, json=data)
+                        response = requests.post(SENSOR_DATA_API_URL, json=[data])
                         if response.status_code == 200:
                             logger.info("Sensor data posted successfully")
                     except Exception as e:
