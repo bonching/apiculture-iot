@@ -166,9 +166,9 @@ def sweep_servo_and_capture(direction_forward):
 
         # Determine sweep angles based on direction
         if direction_forward:
-            angles = list(range(SERVO_MIN_ANGLE, SERVO_MAX_ANGLE + 1, SWEEP_STEP))
+            angles = list(range(SERVO_MIN_ANGLE, SERVO_MAX_ANGLE + 1, SWEEP_STEP * 2))
         else:
-            angles = list(range(SERVO_MAX_ANGLE, SERVO_MIN_ANGLE - 1, -SWEEP_STEP))
+            angles = list(range(SERVO_MAX_ANGLE, SERVO_MIN_ANGLE - 1, -SWEEP_STEP * 2))
 
         logger.info(f"Starting servo sweep {'forward' if direction_forward else 'backward'} "
                     f"with {len(angles)} capture points")
