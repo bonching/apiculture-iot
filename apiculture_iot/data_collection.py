@@ -181,7 +181,7 @@ def handle_camera_capture(data):
         camera.capture_file(filepath)
         camera.stop()
 
-        client_id = request.sid
+        client_id = data.get('client_id', request.sid)
 
         with open(filepath, 'rb') as image_file:
             # Create a dictionary for the files to be sent, using the new filename
@@ -416,9 +416,9 @@ def execute_data_collection():
                         logger.error(f"Error posting sensor data: {e}")
 
                 sensors = list(mongo.sensors_collection.find({"beehive_id": BEEHIVE_ID, "active": True}))
-                logger.info("sensors: {}", len(sensors))
+                logger.info(f"sensors: {len(sensors)}")
                 for sensor in sensors:
-                    logger.info("sensor: {}", sensor)
+                    logger.info(f"sensor: {sensor}")
                     if 'temperature' in sensor['data_capture']:
                         data_type = mongo.data_types_collection.find_one({'sensor_id': sensor['_id'], 'data_type': 'temperature'})
                         if data_type:
@@ -441,7 +441,7 @@ def execute_data_collection():
                 try:
                     logger.info("")
                     logger.info("Step 3: Capturing image...")
-                    handle_camera_capture({'context': 'data_collection'})
+                    handle_camera_capture({'context': 'data_collection', 'client_id': request.sid})
                 except Exception as e:
                     logger.error(f"Error capturing image: {e}")
                     traceback.print_exc()
