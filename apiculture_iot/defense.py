@@ -135,9 +135,9 @@ def rotate_camera(angle):
             time.sleep(1)
 
             # Sweep back from 180° to 0°
-            for angle in range(180, -1, -1):
-                set_servo_angle(angle)
-                time.sleep(0.015)
+            # for angle in range(180, -1, -1):
+            #     set_servo_angle(angle)
+            #     time.sleep(0.015)
 
             # Hold at 0° for 1 second
             time.sleep(1)
