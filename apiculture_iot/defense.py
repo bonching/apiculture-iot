@@ -21,9 +21,11 @@ from picamera2 import Picamera2
 from gpiozero import AngularServo
 import RPi.GPIO as GPIO
 
+from apiculture_iot.util.config import API_HOST, API_PORT
+
 # Configuration
 DEFENSE_CHECK_INTERVAL = 30 * 1
-DEFENSE_API_URL = 'http://192.168.68.106:8081/api/images'
+DEFENSE_API_URL = f'http://{API_HOST}:{API_PORT}/api/images'
 WATER_SPRINKLER_DURATION = 2
 
 # GPIO Configuration
