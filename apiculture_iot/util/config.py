@@ -2,6 +2,8 @@ MONGODB_URL = 'mongodb://192.168.68.106:27017/?directConnection=true&serverSelec
 API_HOST = '192.168.68.106'
 API_PORT = 8081
 
+BEEHIVE_ID = ''
+
 DATA_COLLECTION_METRICS = {
     'temperature': { 'base_value': 34.5, 'variance': 2, 'unit': '°C', 'anomaly_rate': 3 },
     'humidity': { 'base_value': 58, 'variance': 5, 'unit': '%', 'anomaly_rate': 1 },

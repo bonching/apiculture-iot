@@ -38,7 +38,7 @@ logger.setLevel(logging.INFO)
 
 DATA_COLLECTION_INTERVAL = 60*1
 IMAGE_API_URL = 'http://192.168.68.114:8081/api/images'
-SENSOR_DATE_API_URL = 'http://192.168.68.114:8081/api/sensor-data'
+SENSOR_DATA_API_URL = 'http://192.168.68.114:8081/api/sensor-data'
 
 #GPIO Configuration
 SERVO_PIN = 18
@@ -409,7 +409,7 @@ def execute_data_collection():
 
                 # Post sensor data to API
                 try:
-                    response = requests.post(SENSOR_DATE_API_URL, json=payload)
+                    response = requests.post(SENSOR_DATA_API_URL, json=payload)
                     if response.status_code == 200:
                         logger.info("Sensor data posted successfully!")
                         logger.info(f"Response: {response.text}")
