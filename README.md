@@ -8,18 +8,21 @@
 
 ### Run the IoT agent (Harvest system)
 ```
+export API_HOST=192.168.68.106
 . /home/apiculture/apiculture-iot/run_harvest_system.sh
 tail -100f /home/apiculture/harvest.log
 ```
 
 ### Run the IoT agent (Data collection system)
 ```
+export API_HOST=192.168.68.106
 . /home/apiculture/apiculture-iot/run_data_collection_system.sh
 tail -100f /home/apiculture/data_collection.log
 ```
 
 ### Run the IoT agent (Defense system)
 ```
+export API_HOST=192.168.68.106
 . /home/apiculture/apiculture-iot/run_defense_system.sh
 tail -100f /home/apiculture/defense.log
 ```
