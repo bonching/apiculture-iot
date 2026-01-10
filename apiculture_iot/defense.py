@@ -18,7 +18,6 @@ import time
 import os
 from datetime import datetime
 from picamera2 import Picamera2
-from gpiozero import AngularServo
 import RPi.GPIO as GPIO
 
 from apiculture_iot.util.config import API_HOST, API_PORT
@@ -30,7 +29,7 @@ WATER_SPRINKLER_DURATION = 2
 
 # GPIO Configuration
 SPRINKLER_PIN = 23
-CAMERA_SERVO_PIN = 18
+CAMERA_SERVO_PIN = 22
 
 # Storage directories
 IMAGE_PATH = "/home/apiculture/photos"
@@ -52,7 +51,7 @@ except Exception as e:
 
 # Initialize camera rotation servo
 try:
-    camera_servo = AngularServo(CAMERA_SERVO_PIN, min_angle=-90, max_angle=90)
+    # camera_servo = AngularServo(CAMERA_SERVO_PIN, min_angle=-90, max_angle=90)
     camera_servo_available = True
     print(f"Camera rotation servo initialized on GPIO PIN: {CAMERA_SERVO_PIN}")
 except Exception as e:
@@ -110,10 +109,45 @@ def rotate_camera(angle):
         return False
 
     try:
-        print(f"Rotating camera to {angle} degrees")
-        camera_servo.angle = angle
-        time.sleep(1)
-        print("Camera rotated successfully")
+        # Set up PWM on the pin (50 Hz for standard servos)
+        GPIO.setup(CAMERA_SERVO_PIN, GPIO.OUT)
+        pwm = GPIO.PWM(CAMERA_SERVO_PIN, 50)  # 50 Hz frequency
+        pwm.start(0)  # Start PWM with 0% duty cycle
+
+        def set_servo_angle(angle):
+            """
+            Convert angle (0-180) to duty cycle.
+            Adjusted mapping for Pi compatibility: 0° ≈ 2%, 180° ≈ 12% (covers 0.5-2.5ms pulse).
+            """
+            duty = 2 + (angle / 18.0)  # Linear mapping with offset for jitter reduction
+            pwm.ChangeDutyCycle(duty)
+            time.sleep(0.1)  # Brief pause for stability
+
+        try:
+            # Sweep from 0° to 180°
+            for angle in range(0, 181, 1):
+                set_servo_angle(angle)
+                time.sleep(0.015)  # ~15ms delay for smooth motion (adjust for speed)
+
+            # Hold at 180° for 1 second
+            time.sleep(1)
+
+            # Sweep back from 180° to 0°
+            for angle in range(180, -1, -1):
+                set_servo_angle(angle)
+                time.sleep(0.015)
+
+            # Hold at 0° for 1 second
+            time.sleep(1)
+
+        except KeyboardInterrupt:
+            print("Stopped by user")
+
+        finally:
+            # Stop PWM (cleanup omitted to avoid the bug)
+            pwm.stop()
+            print("PWM stopped - GPIO resources auto-released on exit")
+
         return True
     except Exception as e:
         print(f"Error rotating camera: {e}")
@@ -261,14 +295,14 @@ def cleanup():
         except:
             pass
 
-    if camera_servo_available:
-        try:
-            camera_servo.angle = 0
-            time.sleep(0.5)
-            camera_servo.close()
-            print("Camera servo turned to neutral and closed.")
-        except:
-            pass
+    # if camera_servo_available:
+    #     try:
+    #         camera_servo.angle = 0
+    #         time.sleep(0.5)
+    #         camera_servo.close()
+    #         print("Camera servo turned to neutral and closed.")
+    #     except:
+    #         pass
 
     if camera_available:
         try:
