@@ -24,6 +24,7 @@ export PYTHONPATH=/usr/lib/python3/dist-packages:$PYTHONPATH
 
 python3 /home/apiculture/apiculture-iot/apiculture_iot/servo_angle_test.py 18 45
 python3 /home/apiculture/apiculture-iot/apiculture_iot/servo_rotate_test.py 22 5
+python3 /home/apiculture/apiculture-iot/apiculture_iot/servo_SG90_calibrate.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/harvest.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/camera.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/pump_test.py
