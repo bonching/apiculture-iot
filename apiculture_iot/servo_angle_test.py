@@ -14,8 +14,8 @@ else:
 if len(sys.argv) > 2:
     try:
         angle = int(sys.argv[2])
-        if not -90 <= angle <= 90:
-            print(f"Angle must be between -90 and 90 degrees.")
+        if not 30 <= angle <= 180:
+            print(f"Angle must be between 30 and 180 degrees.")
             sys.exit(1)
     except ValueError:
         print(f"Invalid angle: {sys.argv[2]}")
@@ -38,7 +38,7 @@ else:
 frame_width = 1.0 / frequency
 
 print(f"\n\nSG90 Servo Single Movement Test on GPIO PIN: {GPIO_PIN}")
-print(f"Moving to {angle}° once, then returning to 0° (PWM frequency: {frequency} Hz)")
+print(f"Moving to {angle}° once (range: 30-180°), then returning to 0° (PWM frequency: {frequency} Hz)")
 print(f"Usage: python3 servo.py <GPIO_PIN> (default: 18) <ANGLE> (default: 90) <FREQUENCY> (default: 50)")
 print(f"Example: python3 servo.py 22 45 50")
 print("-" * 60)
@@ -46,8 +46,8 @@ print("-" * 60)
 try:
     servo = AngularServo(
         GPIO_PIN,
-        min_angle=-90,
-        max_angle=90,
+        min_angle=0,
+        max_angle=180,
         initial_angle=0,
         frame_width=frame_width
     )
