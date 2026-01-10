@@ -42,5 +42,6 @@ pip3 install --force-reinstall --no-deps --no-cache-dir adafruit-platformdetect
 
 # pip3 install -r /home/apiculture/apiculture-iot/requirements.txt
 pip3 install flask flask-socketio python-socketio gpiozero picamera2 requests
+pip3 install python-dateutil pymongo
 
 echo "Setup complete! Virtual environment 'bme280_venv' is activated. Run 'deactivate' to exit when done."

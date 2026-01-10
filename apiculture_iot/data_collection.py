@@ -66,7 +66,7 @@ except Exception as e:
 try:
     data_collection_servo = AngularServo(SERVO_PIN, min_angle=-90, max_angle=90)
     servo_available = True
-    logger.info("Servo initialized on GPIO PIN: ", SERVO_PIN)
+    logger.info("Servo initialized on GPIO PIN: {}", SERVO_PIN)
 except Exception as e:
     logger.error(f"Error initializing servo: {e}")
     data_collection_servo = None
@@ -192,10 +192,10 @@ def handle_camera_capture(data):
                 # Check the response
                 if response.status_code == 200:
                     logger.info("Image uploaded successfully!")
-                    logger.info("Response:", response.text)
+                    logger.info("Response: {}", response.text)
                 else:
                     logger.info(f"Failed to upload image. Status code: {response.status_code}")
-                    logger.info("Response:", response.text)
+                    logger.info("Response: {}", response.text)
 
             except requests.exceptions.RequestException as e:
                 logger.error(f"An error occurred: {e}")
@@ -418,10 +418,10 @@ def execute_data_collection():
                     response = requests.post(SENSOR_DATE_API_URL, json=payload)
                     if response.status_code == 200:
                         logger.info("Sensor data posted successfully!")
-                        logger.info("Response:", response.text)
+                        logger.info("Response: {}", response.text)
                     else:
                         logger.info(f"Failed to post sensor data. Status code: {response.status_code}")
-                        logger.info("Response:", response.text)
+                        logger.info("Response: {}", response.text)
                 except requests.exceptions.RequestException as e:
                     logger.error(f"An error occurred: {e}")
 
