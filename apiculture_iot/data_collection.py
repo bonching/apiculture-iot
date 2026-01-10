@@ -181,7 +181,7 @@ def handle_camera_capture(data):
         camera.capture_file(filepath)
         camera.stop()
 
-        client_id = data.get('client_id', request.sid)
+        client_id = data.get('client_id')
 
         with open(filepath, 'rb') as image_file:
             # Create a dictionary for the files to be sent, using the new filename
@@ -214,8 +214,9 @@ def handle_camera_capture(data):
             'message': f'Photo captured successfully'
         }
 
-        socketio.emit('camera:response', response, room=client_id, namespace='/')
-        broadcast_status_update('camera', camera_state.copy())
+        if data.get('context') == 'harvest':
+            emit('camera:response', response)
+            broadcast_status_update('camera', camera_state.copy())
 
     except Exception as e:
         traceback.print_exc()
@@ -409,9 +410,10 @@ def execute_data_collection():
                             'value': value,
                             'datetime': datetime.now(timezone.utc)
                         }
+                        logger.info(f"Posting sensor data : {data}")
                         response = requests.post(SENSOR_DATA_API_URL, json=data)
                         if response.status_code == 200:
-                            logger.info(f"Sensor data posted successfully : {data}")
+                            logger.info("Sensor data posted successfully")
                     except Exception as e:
                         logger.error(f"Error posting sensor data: {e}")
 
@@ -441,7 +443,7 @@ def execute_data_collection():
                 try:
                     logger.info("")
                     logger.info("Step 3: Capturing image...")
-                    handle_camera_capture({'context': 'data_collection', 'client_id': request.sid})
+                    handle_camera_capture({'context': 'data_collection'})
                 except Exception as e:
                     logger.error(f"Error capturing image: {e}")
                     traceback.print_exc()
