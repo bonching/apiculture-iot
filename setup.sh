@@ -7,6 +7,7 @@ sudo apt install python3.11-dev -y
 sudo apt install python3-setuptools python3-wheel -y
 sudo apt install python3-picamzero -y
 sudo apt install python3-gpiozero -y
+sudo apt install python3-rpi.gpio
 #sudo apt install rpi-connect -y # causing ssh failure
 
 # install desktop
@@ -21,6 +22,7 @@ source ~/.bashrc
 mkdir -p /home/apiculture/py_env
 
 # Create and activate the BME280 virtual environment
+# deactivate
 # rm -rf /home/apiculture/py_env/bme280_venv
 python3 -m venv /home/apiculture/py_env/bme280_venv
 source /home/apiculture/py_env/bme280_venv/bin/activate
@@ -32,9 +34,11 @@ pip3 install --upgrade pip setuptools wheel
 pip3 install RPi.GPIO
 
 # Install the required packages for BME280
-pip3 install adafruit-blinka
-pip3 install adafruit-circuitpython-busdevice
-pip3 install adafruit-circuitpython-bme280
+pip3 install --force-reinstall --no-deps --no-cache-dir adafruit-blinka
+pip3 install --force-reinstall --no-deps --no-cache-dir adafruit-circuitpython-busdevice
+pip3 install --force-reinstall --no-deps --no-cache-dir adafruit-circuitpython-bme280
+pip3 install --force-reinstall --no-deps --no-cache-dir adafruit-platformdetect
+
 
 # pip3 install -r /home/apiculture/apiculture-iot/requirements.txt
 pip3 install flask flask-socketio python-socketio gpiozero picamera2 requests
