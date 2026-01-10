@@ -49,7 +49,9 @@ try:
         min_angle=0,
         max_angle=180,
         initial_angle=0,
-        frame_width=frame_width
+        frame_width=frame_width,
+        min_pulse_width=0.0005,  # 0.5 ms for 0°
+        max_pulse_width=0.0025  # 2.5 ms for 180°
     )
     print(f"Moving to {angle}°...")
     servo.angle = angle
