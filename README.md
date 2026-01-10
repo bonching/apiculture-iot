@@ -1,15 +1,38 @@
 # apiculture-iot
 
+## Configure the Raspberry Pi (one time setup)
 ```
 . /home/apiculture/apiculture-iot/setup.sh
+```
+---
 
+### Run the IoT agent (Harvest system)
+```
 . /home/apiculture/apiculture-iot/run_harvest_system.sh
 tail -100f /home/apiculture/harvest.log
+```
 
+### Run the IoT agent (Data collection system)
+```
 . /home/apiculture/apiculture-iot/run_data_collection_system.sh
 tail -100f /home/apiculture/data_collection.log
 ```
 
+### Run the IoT agent (Defense system)
+```
+. /home/apiculture/apiculture-iot/run_defense_system.sh
+tail -100f /home/apiculture/defense.log
+```
+---
+
+## Raspberry pi 5 setup
+```
+
+```
+
+
+
+### Other commands
 ```
 pip3 install flask
 pip3 install flask_socketio
@@ -31,11 +54,6 @@ python3 /home/apiculture/apiculture-iot/apiculture_iot/pump_test.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/smoker_test.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/solenoid_valve_test.py
 python3 /home/apiculture/apiculture-iot/apiculture_iot/bme280_adafruit_reader2.py
-```
-
-```
-# Raspberry pi 5
-
 ```
 
 
