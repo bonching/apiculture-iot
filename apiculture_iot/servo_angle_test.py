@@ -35,6 +35,8 @@ if len(sys.argv) > 3:
 else:
     frequency = 50.0
 
+frame_width = 1.0 / frequency
+
 print(f"\n\nSG90 Servo Single Movement Test on GPIO PIN: {GPIO_PIN}")
 print(f"Moving to {angle}° once, then returning to 0° (PWM frequency: {frequency} Hz)")
 print(f"Usage: python3 servo.py <GPIO_PIN> (default: 18) <ANGLE> (default: 90) <FREQUENCY> (default: 50)")
@@ -47,7 +49,7 @@ try:
         min_angle=-90,
         max_angle=90,
         initial_angle=0,
-        frequency=frequency
+        frame_width=frame_width
     )
     print(f"Moving to {angle}°...")
     servo.angle = angle
