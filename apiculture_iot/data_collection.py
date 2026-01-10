@@ -168,7 +168,7 @@ def handle_camera_capture(data):
 
     try:
         data = data or {}
-        filename = data.get('filename', f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg')
+        filename = data.get('filename', f'data_collection_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg')
 
         if not filename.endswith(('.jpg', '.jpeg', '.png')):
             filename += '.jpg'
