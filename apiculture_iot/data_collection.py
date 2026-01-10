@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import random
 import sys
+import traceback
 
 from flask import Flask, request
 from flask_socketio import SocketIO, emit
@@ -199,6 +200,7 @@ def handle_camera_capture(data):
 
             except requests.exceptions.RequestException as e:
                 logger.error(f"An error occurred: {e}")
+                traceback.print_exc()
 
         with state_lock:
             camera_state['last_photo'] = filepath
@@ -214,6 +216,7 @@ def handle_camera_capture(data):
         broadcast_status_update('camera', camera_state.copy())
 
     except Exception as e:
+        traceback.print_exc()
         emit('error', {'message': str(e), 'device': 'camera'})
 
 
@@ -301,6 +304,7 @@ def handle_camera_video(data):
             emit('error', {'message': f'Invalid action: {action}, action must be start or stop', 'device': 'camera'})
 
     except Exception as e:
+        traceback.print_exc()
         emit('error', {'message': str(e), 'device': 'camera'})
 
 
@@ -373,6 +377,7 @@ def execute_data_collection():
                 except Exception as e:
                     logger.error(f"Failed to initialize I2C: {e}")
                     logger.error(f"Generating random sensor data for testing")
+                    traceback.print_exc()
 
                     def generate_random_readings(data_type):
                         base_value = DATA_COLLECTION_METRICS[data_type]['base_value']
@@ -424,9 +429,11 @@ def execute_data_collection():
                         logger.info(f"Response: {response.text}")
                 except requests.exceptions.RequestException as e:
                     logger.error(f"An error occurred: {e}")
+                    traceback.print_exc()
 
             except Exception as e:
                 logger.error(f"Error collecting sensor data: {e}")
+                traceback.print_exc()
 
             # Step 3: Capture image and post to API
             if camera_available:
@@ -435,6 +442,7 @@ def execute_data_collection():
                     handle_camera_capture({'context': 'data_collection'})
                 except Exception as e:
                     logger.error(f"Error capturing image: {e}")
+                    traceback.print_exc()
             else:
                 logger.info("Camera not available, skipping image capture...")
 
@@ -453,6 +461,7 @@ def execute_data_collection():
 
         except Exception as e:
             logger.error(f"Error executing data collection: {e}")
+            traceback.print_exc()
             # Continue running despite error
             pass
 
