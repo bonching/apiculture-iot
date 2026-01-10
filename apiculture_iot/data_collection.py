@@ -414,7 +414,9 @@ def execute_data_collection():
                         logger.error(f"Error posting sensor data: {e}")
 
                 sensors = list(mongo.sensors_collection.find({"beehive_id": BEEHIVE_ID, "active": True}))
+                logger.info("sensors: {}", len(sensors))
                 for sensor in sensors:
+                    logger.info("sensor: {}", sensor)
                     if 'temperature' in sensor['data_capture']:
                         data_type = mongo.data_types_collection.find_one({'sensor_id': sensor['_id'], 'data_type': 'temperature'})
                         if data_type:
@@ -435,7 +437,8 @@ def execute_data_collection():
             # Step 3: Capture image and post to API
             if camera_available:
                 try:
-                    logger.info("\nStep 3: Capturing image...")
+                    logger.info("")
+                    logger.info("Step 3: Capturing image...")
                     handle_camera_capture({'context': 'data_collection'})
                 except Exception as e:
                     logger.error(f"Error capturing image: {e}")
