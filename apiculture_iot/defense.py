@@ -140,7 +140,7 @@ def rotate_camera(angle):
             #     time.sleep(0.015)
 
             # Hold at 0° for 1 second
-            time.sleep(1)
+            # time.sleep(1)
 
         except KeyboardInterrupt:
             print("Stopped by user")
