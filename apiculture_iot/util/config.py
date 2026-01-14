@@ -1,6 +1,6 @@
 import os
 
-API_HOST = os.environ.get('API_HOST', '192.168.68.114')
+API_HOST = os.environ.get('API_HOST', '192.168.68.104')
 API_PORT = 8081
 MONGODB_URL = f'mongodb://{API_HOST}:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=apiculture'
 
