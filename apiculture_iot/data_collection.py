@@ -193,7 +193,7 @@ def handle_camera_capture(data):
                 response = requests.post(IMAGE_API_URL, files=files, data=data)
 
                 # Check the response
-                if response.status_code == 200:
+                if response.status_code == 200 or response.status_code == 201:
                     logger.info("Image uploaded successfully!")
                     logger.info(f"Response: {response.text}")
                 else:
