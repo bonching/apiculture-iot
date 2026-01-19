@@ -50,6 +50,11 @@ BME280_I2C_ADDRESS = 0x76 # Default I2C address for BME280 (use 0x77 if needed)
 PHOTO_DIR = "/home/apiculture/photos"
 VIDEO_DIR = "/home/apiculture/videos"
 
+# Fallback image path (relative to the project root)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+FALLBACK_IMAGE_PATH = os.path.join(PROJECT_ROOT, 'images', 'honeycomb.jpg')
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'apiculture-iot-secret-key'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
@@ -162,9 +167,6 @@ def handle_get_health():
 @socketio.on('camera:capture')
 def handle_camera_capture(data):
     """Capture a photo"""
-    if not camera_available:
-        emit('error', {'message': 'Camera is not available', 'device': 'camera'})
-        return
 
     try:
         data = data or {}
@@ -176,10 +178,24 @@ def handle_camera_capture(data):
         filepath = os.path.join(PHOTO_DIR, filename)
 
         # Configure and capture
-        camera.start()
-        time.sleep(2)
-        camera.capture_file(filepath)
-        camera.stop()
+        if camera_available:
+            camera.start()
+            time.sleep(2)
+            camera.capture_file(filepath)
+            camera.stop()
+            logger.info(f"Photo captured from camera: {filepath}")
+        else:
+            # Use fallback image when camera is unavailable
+            logger.warning("Camera is unavailable, using fallback image")
+            if os.path.exists(FALLBACK_IMAGE_PATH):
+                # Copy fallback image to photo directory
+                import shutil
+                shutil.copy2(FALLBACK_IMAGE_PATH, filepath)
+                logger.info(f"Fallback image copied to: {filepath}")
+            else:
+                logger.error(f"Fallback image not found at: {FALLBACK_IMAGE_PATH}")
+                emit('error', {'message': f"Fallback image not found at: {FALLBACK_IMAGE_PATH}", 'device': 'camera'})
+                return
 
         client_id = data.get('client_id')
 
@@ -211,7 +227,7 @@ def handle_camera_capture(data):
             'success': True,
             'filename': filename,
             'filepath': filepath,
-            'message': f'Photo captured successfully'
+            'message': f'Photo captured successfully' if camera_available else 'Fallback image used (camera is unavailable)'
         }
 
         if data.get('context') == 'harvest':
@@ -439,16 +455,13 @@ def execute_data_collection():
                 traceback.print_exc()
 
             # Step 3: Capture image and post to API
-            if camera_available:
-                try:
-                    logger.info("")
-                    logger.info("Step 3: Capturing image...")
-                    handle_camera_capture({'context': 'data_collection'})
-                except Exception as e:
-                    logger.error(f"Error capturing image: {e}")
-                    traceback.print_exc()
-            else:
-                logger.info("Camera not available, skipping image capture...")
+            try:
+                logger.info("")
+                logger.info("Step 3: Capturing image...")
+                handle_camera_capture({'context': 'data_collection'})
+            except Exception as e:
+                logger.error(f"Error capturing image: {e}")
+                traceback.print_exc()
 
             # Return servo to neutral position
             if servo_available:
