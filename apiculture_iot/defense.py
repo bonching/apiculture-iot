@@ -192,7 +192,6 @@ def sweep_servo_and_capture(direction_forward):
         logger.warning("Camera rotation servo is not available")
         return False, False, []
 
-    captured_files = []
     pwm = None
     try:
         # Set up PWM (50 Hz for servos)
