@@ -5,6 +5,8 @@ API_PORT = 8081
 MONGODB_URL = f'mongodb://{API_HOST}:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=apiculture'
 
 BEEHIVE_ID = '693ad7c84739d5289a1e0835'
+BEE_COUNTER_CAMERA_SENSOR_ID = '693b4c90943e75b9d619e11b'
+DEFENSE_CAMERA_SENSOR_ID = '693b4c90943e75b9d619e11c'
 
 DATA_COLLECTION_METRICS = {
     'temperature': { 'base_value': 34.5, 'variance': 2, 'unit': '°C', 'anomaly_rate': 3 },

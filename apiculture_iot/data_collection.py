@@ -16,7 +16,8 @@ import board
 import adafruit_bme280.basic as adafruit_bme280
 
 from apiculture_iot.util.app_util import AppUtil
-from apiculture_iot.util.config import DATA_COLLECTION_METRICS, API_HOST, API_PORT, BEEHIVE_ID
+from apiculture_iot.util.config import DATA_COLLECTION_METRICS, API_HOST, API_PORT, BEEHIVE_ID, \
+    DEFENSE_CAMERA_SENSOR_ID, BEE_COUNTER_CAMERA_SENSOR_ID
 
 util = AppUtil()
 
@@ -216,7 +217,7 @@ def handle_camera_capture(data):
         with open(filepath, 'rb') as image_file:
             # Create a dictionary for the files to be sent, using the new filename
             files = {'image': (filename, image_file, 'image/jpeg')}
-            data = {'context': 'harvest'} if 'context' not in data else data
+            data = {'context': 'harvest', 'sensorId': DEFENSE_CAMERA_SENSOR_ID} if 'context' not in data else data
 
             try:
                 # Send the POST request
@@ -472,7 +473,7 @@ def execute_data_collection():
             try:
                 logger.info("")
                 logger.info("Step 3: Capturing image...")
-                handle_camera_capture({'context': 'data_collection'})
+                handle_camera_capture({'context': 'data_collection', 'sensorId': BEE_COUNTER_CAMERA_SENSOR_ID})
             except Exception as e:
                 logger.error(f"Error capturing image: {e}")
                 traceback.print_exc()
