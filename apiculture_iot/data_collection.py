@@ -235,7 +235,7 @@ def handle_camera_capture(data):
                             {
                                 'datetime': datetime.now(timezone.utc).isoformat(timespec='milliseconds'),
                                 'dataTypeId': util.objectid_to_str(data_type['_id']),
-                                'value': response.text['bee_count']['count'],
+                                'value': int(response.text['bee_count']['count']),
                                 'imageId': response.text['imageId']
                             }
                         ]
