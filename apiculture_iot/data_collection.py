@@ -44,7 +44,7 @@ SENSOR_DATA_API_URL = f'http://{API_HOST}:{API_PORT}/api/metrics'
 SERVO_PIN = 18
 
 # BME280 Configuration
-BME280_I2C_ADDRESS = 0x76 # Default I2C address for BME280 (use 0x77 if needed)
+BME280_I2C_ADDRESS = 0x77 # Default I2C address for BME280 (use 0x77 if needed)
 
 # Storage directories
 PHOTO_DIR = "/home/apiculture/photos"
