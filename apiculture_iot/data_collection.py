@@ -228,6 +228,20 @@ def handle_camera_capture(data):
                 if response.status_code == 200 or response.status_code == 201:
                     logger.info("Image uploaded successfully!")
                     logger.info(f"Response: {response.text}")
+
+                    if data.get('context') == 'data_collection':
+                        data_type = mongo.data_types_collection.find_one({'sensor_id': BEE_COUNTER_CAMERA_SENSOR_ID, 'data_type': 'bee_count'})
+                        bee_count_data = [
+                            {
+                                'datetime': datetime.now(timezone.utc).isoformat(timespec='milliseconds'),
+                                'dataTypeId': util.objectid_to_str(data_type['_id']),
+                                'value': response.text['bee_count']['count'],
+                                'imageId': response.text['imageId']
+                            }
+                        ]
+                        logger.info(f"Bee count from image analysis: {str(bee_count_data)}")
+                        response = requests.post(f'http://{API_HOST}:{API_PORT}/api/metrics', json=bee_count_data)
+                        logger.info(response.json())
                 else:
                     logger.info(f"Failed to upload image. Status code: {response.status_code}")
                     logger.info(f"Response: {response.text}")
