@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import random
 import sys
 import traceback
@@ -230,13 +231,14 @@ def handle_camera_capture(data):
                     logger.info(f"Response: {response.text}")
 
                     if data.get('context') == 'data_collection':
+                        bee_count_response = json.loads(response.text)
                         data_type = mongo.data_types_collection.find_one({'sensor_id': BEE_COUNTER_CAMERA_SENSOR_ID, 'data_type': 'bee_count'})
                         bee_count_data = [
                             {
                                 'datetime': datetime.now(timezone.utc).isoformat(timespec='milliseconds'),
                                 'dataTypeId': util.objectid_to_str(data_type['_id']),
-                                'value': int(response.text['bee_count']['count']),
-                                'imageId': response.text['imageId']
+                                'value': int(bee_count_response.get('bee_count').get('count')),
+                                'imageId': bee_count_response.get('imageId')
                             }
                         ]
                         logger.info(f"Bee count from image analysis: {str(bee_count_data)}")
