@@ -8,6 +8,9 @@ BEEHIVE_ID = '693ad7c84739d5289a1e0835'
 BEE_COUNTER_CAMERA_SENSOR_ID = '693b4c90943e75b9d619e11b'
 DEFENSE_CAMERA_SENSOR_ID = '693b4c90943e75b9d619e11c'
 
+DEFENSE_CHECK_INTERVAL = 60
+WATER_SPRINKLER_DURATION = 2
+
 DATA_COLLECTION_METRICS = {
     'temperature': { 'base_value': 34.5, 'variance': 2, 'unit': '°C', 'anomaly_rate': 3 },
     'humidity': { 'base_value': 58, 'variance': 5, 'unit': '%', 'anomaly_rate': 1 },

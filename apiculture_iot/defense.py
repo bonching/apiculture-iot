@@ -23,7 +23,7 @@ import json
 import random
 import shutil
 
-from apiculture_iot.util.config import API_HOST, API_PORT
+from apiculture_iot.util.config import API_HOST, API_PORT, DEFENSE_CHECK_INTERVAL, WATER_SPRINKLER_DURATION
 
 # Setup logging
 logging.basicConfig(
@@ -39,9 +39,7 @@ logger.setLevel(logging.INFO)
 
 
 # Configuration
-DEFENSE_CHECK_INTERVAL = 1 * 30
 DEFENSE_API_URL = f'http://{API_HOST}:{API_PORT}/api/images'
-WATER_SPRINKLER_DURATION = 2
 
 # GPIO Configuration
 SPRINKLER_PIN = 23
