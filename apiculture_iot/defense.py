@@ -23,7 +23,8 @@ import json
 import random
 import shutil
 
-from apiculture_iot.util.config import API_HOST, API_PORT, DEFENSE_CHECK_INTERVAL, WATER_SPRINKLER_DURATION
+from apiculture_iot.util.config import API_HOST, API_PORT, DEFENSE_CHECK_INTERVAL, WATER_SPRINKLER_DURATION, \
+    DEFENSE_CAMERA_SENSOR_ID
 
 # Setup logging
 logging.basicConfig(
@@ -268,7 +269,7 @@ def analyze_captured_images(captured_files):
             filename = os.path.basename(filepath)
             with open(filepath, 'rb') as image_file:
                 files = {'image': (filename, image_file, 'image/jpeg')}
-                data = {'context': 'defense'}
+                data = {'context': 'defense', 'sensorId': DEFENSE_CAMERA_SENSOR_ID}
 
                 response = requests.post(DEFENSE_API_URL, files=files, data=data, timeout=30)
                 response.raise_for_status()
