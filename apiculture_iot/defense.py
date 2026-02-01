@@ -20,6 +20,8 @@ import os
 import logging
 from datetime import datetime
 import json
+import random
+import shutil
 
 from apiculture_iot.util.config import API_HOST, API_PORT
 
@@ -143,12 +145,52 @@ def sweep_servo_and_capture(direction_forward):
     Sweep servo in the specified direction and capture multiple images at intervals.
     Returns: (success, threat_detected, captured_files)
     """
+    captured_files = []
+
+    # Handle case when camera is not available - use fallback images
+    if not camera_available and not camera:
+        logger.warning("Camera is not available, using random fallback images from bee_predators folder")
+
+        # Get the project root director (parent of apiculture_iot folder)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        bee_predators_dir = os.path.join(project_root, 'images', 'bee_predators')
+
+        if os.path.exists(bee_predators_dir):
+            # Get all image files from bee_predators directory
+            image_files = [f for f in os.listdir(bee_predators_dir)
+                           if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]
+
+            if image_files:
+                # Create NUM_CAPTURE_POINTS fallback images
+                for i in range(NUM_CAPTURE_POINTS):
+                    # Select a random image
+                    random_image = random.choice(image_files)
+                    random_image_path = os.path.join(bee_predators_dir, random_image)
+
+                    # Create filename with angle simulation
+                    simulated_angle = SERVO_MIN_ANGLE + (i * SWEEP_STEP) if direction_forward else SERVO_MAX_ANGLE - (i * SWEEP_STEP)
+                    filename = f'defense_sweep_{datetime.now().strftime("%Y%m%d_%H%M%S")}_pos{simulated_angle}.jpg'
+                    filepath = os.path.join(IMAGE_PATH, filename)
+
+                    # Copy random image to photo directory
+                    shutil.copy(random_image_path, filepath)
+                    captured_files.append(filepath)
+                    logger.info(f"Random fallback image '{random_image}' copied as: {filepath}")
+                    time.sleep(0.1)  # Brief delay between copies
+
+                logger.info(f"Fallback capture completed. Created {len(captured_files)} images from bee_predators.")
+                return True, False, captured_files
+            else:
+                logger.error(f"No images found in bee_predators directory: {bee_predators_dir}")
+                return False, False, []
+        else:
+            logger.error(f"Bee predators directory not found at: {bee_predators_dir}")
+            return False, False, []
+
+    # Original camera-based capture logic
     if not camera_servo_available:
         logger.warning("Camera rotation servo is not available")
-        return False, False, []
-
-    if not camera_available or not camera:
-        logger.warning("Camera is not available")
         return False, False, []
 
     captured_files = []
