@@ -218,6 +218,7 @@ def handle_camera_capture(data):
             # Create a dictionary for the files to be sent, using the new filename
             files = {'image': (filename, image_file, 'image/jpeg')}
             data = {'context': 'harvest', 'sensorId': DEFENSE_CAMERA_SENSOR_ID} if 'context' not in data else data
+            logger.info(f"data: {data}")
 
             try:
                 # Send the POST request
