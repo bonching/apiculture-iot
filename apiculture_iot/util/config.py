@@ -4,7 +4,7 @@ API_HOST = os.environ.get('API_HOST', '192.168.68.104')
 API_PORT = 8081
 MONGODB_URL = f'mongodb://{API_HOST}:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=apiculture'
 
-BEEHIVE_ID = '693ad7c84739d5289a1e0834'
+BEEHIVE_ID = '693ad7c84739d5289a1e0835'
 
 DATA_COLLECTION_METRICS = {
     'temperature': { 'base_value': 34.5, 'variance': 2, 'unit': '°C', 'anomaly_rate': 3 },
