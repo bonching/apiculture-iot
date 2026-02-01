@@ -18,11 +18,12 @@ import requests
 import time
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import random
 import shutil
 
+from apiculture_iot.data_collection import mongo, util
 from apiculture_iot.util.config import API_HOST, API_PORT, DEFENSE_CHECK_INTERVAL, WATER_SPRINKLER_DURATION, \
     DEFENSE_CAMERA_SENSOR_ID
 
@@ -41,6 +42,7 @@ logger.setLevel(logging.INFO)
 
 # Configuration
 DEFENSE_API_URL = f'http://{API_HOST}:{API_PORT}/api/images'
+ALERT_API_URL = f'http://{API_HOST}:{API_PORT}/api/alerts'
 
 # GPIO Configuration
 SPRINKLER_PIN = 23
@@ -262,6 +264,7 @@ def analyze_captured_images(captured_files):
     """
     any_threat = False
     all_success = True
+    response_with_threat = None
 
     for filepath in captured_files:
         try:
@@ -280,6 +283,10 @@ def analyze_captured_images(captured_files):
                 if run_sprinkler.upper() == 'Y' or run_sprinkler is True:
                     logger.warning(f"Threat detected in {filename}! Preparing sprinkler...")
                     any_threat = True
+                    if response_with_threat is None:
+                        response_with_threat = response_json
+                    elif response_json.get('predator_analysis').get('confidence', 0) > response_with_threat.get('predator_analysis').get('confidence', 0):
+                        response_with_threat = response_json
                     defense_stat['total_threats'] += 1
                     # No early break: Analyze all for completeness
 
@@ -294,6 +301,44 @@ def analyze_captured_images(captured_files):
             if os.path.exists(filepath):
                 os.remove(filepath)
                 logger.debug(f"Cleaned up image: {filepath}")
+
+    if response_with_threat is not None:
+        hive = None
+        farm = None
+
+        sensor = mongo.sensors_collection.find_one({"_id": util.str_to_objectid(DEFENSE_CAMERA_SENSOR_ID)})
+        if sensor and sensor.get('beehive_id'):
+            hive = mongo.hives_collection.find_one({"_id": util.str_to_objectid(sensor['beehive_id'])})
+            if hive and hive.get('farm_id'):
+                farm = mongo.farms_collection.find_one({"_id": util.str_to_objectid(hive['farm_id'])})
+
+        predator_type = response_with_threat.get('predator_analysis').get('predator') or "unknown predator"
+        confidence_pct = int(response_with_threat.get('predator_analysis').get('confidence', 0) * 100)
+
+        event = {
+            "alertType": "predator_detected",
+            "severity": "critical",
+            "title": "Predator Detected!",
+            "message": f"A {predator_type} has been detected with {confidence_pct}% confidence. Defense systems activated.",
+            "imageId": response_with_threat.get('imageId'),
+            "details": {
+                "predatorDetectionMethod": response_with_threat.get('predator_analysis').get('details').get("description")
+            },
+            "timestampMs": datetime.now(timezone.utc)
+        }
+
+        # Add contextual information if available
+        if sensor:
+            event["sensorName"] = sensor.get('name', 'Unknown Sensor')
+        if hive:
+            event["beehiveName"] = hive.get('name', 'Unknown Beehive')
+        if farm:
+            event["farmName"] = farm.get('name', 'Unknown Farm')
+
+        logger.info(f"Posting alert event : {event}")
+        response = requests.post(ALERT_API_URL, json=event)
+        if response.status_code == 200:
+            logger.info("Alert event posted successfully")
 
     return all_success, any_threat
 
