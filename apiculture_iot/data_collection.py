@@ -185,30 +185,30 @@ def handle_camera_capture(data):
             camera.stop()
             logger.info(f"Photo captured from camera: {filepath}")
         else:
-            # Use random fallback image from honeypots folder when camera is unavailable
-            logger.warning("Camera is unavailable, using random fallback image from honeypots folder")
-            honeypots_dir = os.path.join(PROJECT_ROOT, 'images', 'honeypots')
+            # Use random fallback image from bees folder when camera is unavailable
+            logger.warning("Camera is unavailable, using random fallback image from bees folder")
+            bees_dir = os.path.join(PROJECT_ROOT, 'images', 'bees')
 
-            if os.path.exists(honeypots_dir):
-                # Get all image files from honeypots directory
+            if os.path.exists(bees_dir):
+                # Get all image files from bees directory
                 import shutil
-                image_files = [f for f in os.listdir(honeypots_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+                image_files = [f for f in os.listdir(bees_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
 
                 if image_files:
                     # Select a random image
                     random_image = random.choice(image_files)
-                    random_image_path = os.path.join(honeypots_dir, random_image)
+                    random_image_path = os.path.join(bees_dir, random_image)
 
                     # Copy the image to the photos directory
                     shutil.copy2(random_image_path, filepath)
                     logger.info(f"Random fallback image '{random_image}' copied to: {filepath}")
                 else:
-                    logger.error(f"No images found in honeypots directory: {honeypots_dir}")
-                    emit('error', {'message': f"No images found in honeypots directory: {honeypots_dir}", 'device': 'camera'})
+                    logger.error(f"No images found in bees directory: {bees_dir}")
+                    emit('error', {'message': f"No images found in bees directory: {bees_dir}", 'device': 'camera'})
                     return
             else:
-                logger.error(f"Honeypots directory not found at: {honeypots_dir}")
-                emit('error', {'message': f"Honeypots directory not found at: {honeypots_dir}", 'device': 'camera'})
+                logger.error(f"Honeypots directory not found at: {bees_dir}")
+                emit('error', {'message': f"Honeypots directory not found at: {bees_dir}", 'device': 'camera'})
                 return
 
         client_id = data.get('client_id')
