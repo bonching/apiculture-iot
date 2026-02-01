@@ -17,7 +17,7 @@ def read_sensor_data():
     # Initialize BME280 sensor
     try:
         #bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c, address=0x76)  # Try 0x77 if needed
-        sensor = adafruit_bme280.Adafruit_BME280_I2C(i2c, address=0x76)
+        sensor = adafruit_bme280.Adafruit_BME280_I2C(i2c, address=0x77)
     except Exception as e:
         print(f"Failed to initialize BME280: {e}")
         print("Check I2C connections and address (0x76 or 0x77)")
