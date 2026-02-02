@@ -10,8 +10,12 @@ fi
 # Activate the virtual environment
 source /home/apiculture/py_env/bme280_venv/bin/activate
 
+cd /home/apiculture/apiculture-iot/
+
 # Run the Python script in the background with nohup for detachment
 nohup python3 /home/apiculture/apiculture-iot/apiculture_iot/harvest.py > /home/apiculture/harvest.log 2>&1 &
+
+cd ~
 
 # Optional: Store the PID for later reference
 echo $! > /home/apiculture/harvest.pid
