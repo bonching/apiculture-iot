@@ -9,6 +9,8 @@
 ### Set environment variables
 ```
 export API_HOST=192.168.68.106
+export HARVEST_WEBSOCKET_PORT=5000
+export DATA_COLLECTION_WEBSOCKET_PORT=5000
 ```
 
 ### Run the IoT agent (Harvest system)
