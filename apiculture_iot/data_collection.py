@@ -25,6 +25,8 @@ util = AppUtil()
 from apiculture_iot.util.mongo_client import ApicultureMongoClient
 mongo = ApicultureMongoClient()
 
+from apiculture_iot.util.http_client import http_session
+
 import logging
 logging.basicConfig(
     level=logging.INFO,
@@ -219,43 +221,67 @@ def handle_camera_capture(data):
             # Create a dictionary for the files to be sent, using the new filename
             files = {'image': (filename, image_file, 'image/jpeg')}
             data = {'context': 'harvest', 'sensorId': DEFENSE_CAMERA_SENSOR_ID} if 'context' not in data else data
-            logger.info(f"data: {data}")
+            logger.info(f"Uploading image with data: {data}")
 
             try:
-                # Send the POST request
-                response = requests.post(IMAGE_API_URL, files=files, data=data)
+                # Upload image using http_session (handles retries, timeouts, and connection pooling automatically)
+                metrics_response = http_session.post(
+                    IMAGE_API_URL,
+                    files=files,
+                    data=data,
+                    timeout=(10, 60)  # (connect timeout, read timeout) in seconds
+                )
 
                 # Check the response
-                if response.status_code == 200 or response.status_code == 201:
+                if metrics_response.status_code in (200, 201):
                     logger.info("Image uploaded successfully!")
-                    logger.info(f"Response: {response.text}")
+                    logger.info(f"Response: {metrics_response.text}")
 
+                    # Process bee count if this is a data collection context
                     if data.get('context') == 'data_collection':
-                        bee_count_response = json.loads(response.text)
-                        data_type = mongo.data_types_collection.find_one({'sensor_id': BEE_COUNTER_CAMERA_SENSOR_ID, 'data_type': 'bee_count'})
-                        bee_count_data = [
-                            {
-                                'datetime': datetime.now(timezone.utc).isoformat(timespec='milliseconds'),
-                                'dataTypeId': util.objectid_to_str(data_type['_id']),
-                                'value': int(bee_count_response.get('bee_count').get('count')),
-                                'imageId': bee_count_response.get('imageId')
-                            }
-                        ]
-                        logger.info(f"Bee count from image analysis: {str(bee_count_data)}")
-                        response = requests.post(f'http://{API_HOST}:{API_PORT}/api/metrics', json=bee_count_data)
-                        logger.info(response.json())
-                else:
-                    logger.info(f"Failed to upload image. Status code: {response.status_code}")
-                    logger.info(f"Response: {response.text}")
+                        bee_count_response = json.loads(metrics_response.text)
+                        data_type = mongo.data_types_collection.find_one({
+                            'sensor_id': BEE_COUNTER_CAMERA_SENSOR_ID,
+                            'data_type': 'bee_count'
+                        })
 
+                        bee_count_data = [{
+                            'datetime': datetime.now(timezone.utc).isoformat(timespec='milliseconds'),
+                            'dataTypeId': util.objectid_to_str(data_type['_id']),
+                            'value': int(bee_count_response.get('bee_count').get('count')),
+                            'imageId': bee_count_response.get('imageId')
+                        }]
+
+                        logger.info(f"Bee count from image analysis: {str(bee_count_data)}")
+
+                        # Post metrics data
+                        metrics_response = http_session.post(
+                            f'http://{API_HOST}:{API_PORT}/api/metrics',
+                            json=bee_count_data,
+                            timeout=(5, 30)
+                        )
+                        logger.info(f"Metrics posted: {metrics_response.json()}")
+                else:
+                    logger.error(f"Failed to upload image. Status code: {metrics_response.status_code}")
+                    logger.error(f"Response: {metrics_response.text}")
+
+            except requests.exceptions.ConnectionError as e:
+                logger.error(f"Connection error while uploading image: {e}")
+                traceback.print_exc()
+            except requests.exceptions.Timeout as e:
+                logger.error(f"Timeout error while uploading image: {e}")
+                traceback.print_exc()
             except requests.exceptions.RequestException as e:
-                logger.error(f"An error occurred: {e}")
+                logger.error(f"Request error while uploading image: {e}")
+                traceback.print_exc()
+            except Exception as e:
+                logger.error(f"Unexpected error while uploading image: {e}")
                 traceback.print_exc()
 
         with state_lock:
             camera_state['last_photo'] = filepath
 
-        response = {
+        metrics_response = {
             'success': True,
             'filename': filename,
             'filepath': filepath,
@@ -263,7 +289,7 @@ def handle_camera_capture(data):
         }
 
         if data.get('context') == 'harvest':
-            emit('camera:response', response)
+            emit('camera:response', metrics_response)
             broadcast_status_update('camera', camera_state.copy())
 
     except Exception as e:
@@ -452,18 +478,30 @@ def execute_data_collection():
                 logger.info(f"Barometric Pressure: {barometric_pressure} hPa")
 
                 def post_sensor_data(data_type_id, value):
+                    data = {
+                        'dataTypeId': data_type_id,
+                        'value': value,
+                        'datetime': datetime.now(timezone.utc).isoformat()
+                    }
                     try:
-                        data = {
-                            'dataTypeId': data_type_id,
-                            'value': value,
-                            'datetime': datetime.now(timezone.utc).isoformat()
-                        }
                         logger.info(f"Posting sensor data : {data}")
-                        response = requests.post(SENSOR_DATA_API_URL, json=[data])
+                        response = http_session.post(
+                            SENSOR_DATA_API_URL,
+                            json=[data],
+                            timeout=(5, 30)
+                        )
                         if response.status_code == 200:
                             logger.info("Sensor data posted successfully")
+                        else:
+                            logger.warning(f"Failed to post sensor data. Status code: {response.status_code}")
+                    except requests.exceptions.ConnectionError as e:
+                        logger.error(f"Connection error while posting sensor data: {e}")
+                    except requests.exceptions.Timeout as e:
+                        logger.error(f"Timeout error while posting sensor data: {e}")
+                    except requests.exceptions.RequestException as e:
+                        logger.error(f"Request error while posting sensor data: {e}")
                     except Exception as e:
-                        logger.error(f"Error posting sensor data: {e}")
+                        logger.error(f"Unexpected error posting sensor data: {e}")
 
                 sensors = list(mongo.sensors_collection.find({"beehive_id": BEEHIVE_ID, "active": True}))
                 logger.info(f"sensors: {len(sensors)}")

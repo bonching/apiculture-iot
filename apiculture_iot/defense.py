@@ -26,6 +26,7 @@ import shutil
 from apiculture_iot.data_collection import mongo, util
 from apiculture_iot.util.config import API_HOST, API_PORT, DEFENSE_CHECK_INTERVAL, WATER_SPRINKLER_DURATION, \
     DEFENSE_CAMERA_SENSOR_ID
+from apiculture_iot.util.http_client import http_session, make_request
 
 # Setup logging
 logging.basicConfig(
@@ -273,7 +274,7 @@ def analyze_captured_images(captured_files):
                 files = {'image': (filename, image_file, 'image/jpeg')}
                 data = {'context': 'defense', 'sensorId': DEFENSE_CAMERA_SENSOR_ID}
 
-                response = requests.post(DEFENSE_API_URL, files=files, data=data, timeout=30)
+                response = http_session.post(DEFENSE_API_URL, files=files, data=data, timeout=(10, 60))
                 response.raise_for_status()
 
                 logger.info(f"Analysis for {filename}: Success")
@@ -336,7 +337,7 @@ def analyze_captured_images(captured_files):
             event["farmName"] = farm.get('name', 'Unknown Farm')
 
         logger.info(f"Posting alert event : {event}")
-        response = requests.post(ALERT_API_URL, json=event)
+        response = http_session.post(ALERT_API_URL, json=event, timeout=(5, 30))
         if response.status_code == 200:
             logger.info("Alert event posted successfully")
 
