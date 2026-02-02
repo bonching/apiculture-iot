@@ -43,7 +43,7 @@ IMAGE_API_URL = f'http://{API_HOST}:{API_PORT}/api/images'
 SENSOR_DATA_API_URL = f'http://{API_HOST}:{API_PORT}/api/metrics'
 
 #GPIO Configuration
-SERVO_PIN = 18
+SERVO_PIN = 12
 
 # BME280 Configuration
 BME280_I2C_ADDRESS = 0x77 # Default I2C address for BME280 (use 0x77 if needed)
