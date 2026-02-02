@@ -1,4 +1,4 @@
-#!/uae/bin/env python3
+#!/usr/bin/env python3
 """
 HTTP Client Utility with Connection Pooling and Retry Strategy
 
@@ -9,19 +9,19 @@ This module provides a configured requests Session with:
 - Proper error handling
 
 Usage:
-    from apiculture_iot.util.httpclient import http_session, make_request
+    from apiculture_iot.util.http_client import http_session, make_request
 
-    # Using the session
+    # Using the session directly
     response = http_session.post(url, json=data, timeout=(5, 30))
 
-    # using the helper function with automatic retry
+    # Using the helper function with automatic retry
     response = make_request('POST', url, json=data, max_retries=3)
 """
 
 import requests
 import logging
 import time
-import timefrom typing import Optional, Tuple
+from typing import Optional, Tuple
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -41,12 +41,12 @@ class ResilientHTTPSession:
     """
 
     def __init__(
-            self,
-            total_retries: int = 3,
-            backoff_factor: float = 1.0,
-            status_forcelist: Tuple[int, ...] = (429, 500, 502, 503, 504),
-            pool_connections: int = 10,
-            pool_maxsize: int = 10
+        self,
+        total_retries: int = 3,
+        backoff_factor: float = 1.0,
+        status_forcelist: Tuple[int, ...] = (429, 500, 502, 503, 504),
+        pool_connections: int = 10,
+        pool_maxsize: int = 10
     ):
         """
         Initialize the resilient HTTP session.
@@ -80,13 +80,13 @@ class ResilientHTTPSession:
         self.session.mount("https://", adapter)
 
         logger.info(f"Initialized ResilientHTTPSession with {total_retries} retries, "
-                    f"backoff_factor {backoff_factor}, pool_size {pool_maxsize}")
+                    f"backoff_factor={backoff_factor}, pool_size={pool_maxsize}")
 
     def request(
         self,
         method: str,
         url: str,
-        timeout: Optional[Tuple[int, int]] = None,
+        timeout: Optional[Tuple[float, float]] = None,
         **kwargs
     ) -> requests.Response:
         """
@@ -143,7 +143,7 @@ class ResilientHTTPSession:
 
 
 # Global singleton instance
-_global_session = Optional[ResilientHTTPSession] = None
+_global_session: Optional[ResilientHTTPSession] = None
 
 
 def get_http_session(
@@ -175,12 +175,12 @@ def get_http_session(
 
 
 def make_request(
-        method: str,
-        url: str,
-        max_retries: int = 3,
-        retry_delay: float = 1.0,
-        timeout: Optional[Tuple[float, float]] = None,
-        **kwargs
+    method: str,
+    url: str,
+    max_retries: int = 3,
+    retry_delay: float = 1.0,
+    timeout: Optional[Tuple[float, float]] = None,
+    **kwargs
 ) -> Optional[requests.Response]:
     """
     Make an HTTP request with manual retry logic and exponential backoff.
@@ -217,7 +217,7 @@ def make_request(
             else:
                 logger.warning(f"Request returned status {response.status_code}: {method} {url}")
                 if attempt == max_retries - 1:
-                    logger.error(f"Failed after {max_retries} attempts. {method} {url}")
+                    logger.error(f"Failed after {max_retries} attempts: {method} {url}")
                 return response
 
         except requests.exceptions.ConnectionError as e:
@@ -227,7 +227,7 @@ def make_request(
                 logger.info(f"Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
             else:
-                logger.error(f"Failed after {max_retries} connection error attempts. {method} {url}")
+                logger.error(f"Failed after {max_retries} connection error attempts: {method} {url}")
                 return None
 
         except requests.exceptions.Timeout as e:
@@ -253,7 +253,7 @@ def make_request(
     return None
 
 
-# Convenience wraapper for the global session
+# Convenience wrapper for the global session
 http_session = get_http_session()
 
 

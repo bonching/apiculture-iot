@@ -225,7 +225,7 @@ def handle_camera_capture(data):
 
             try:
                 # Upload image using http_session (handles retries, timeouts, and connection pooling automatically)
-                metrics_response = http_session.post(
+                response = http_session.post(
                     IMAGE_API_URL,
                     files=files,
                     data=data,
@@ -233,13 +233,13 @@ def handle_camera_capture(data):
                 )
 
                 # Check the response
-                if metrics_response.status_code in (200, 201):
+                if response.status_code in (200, 201):
                     logger.info("Image uploaded successfully!")
-                    logger.info(f"Response: {metrics_response.text}")
+                    logger.info(f"Response: {response.text}")
 
                     # Process bee count if this is a data collection context
                     if data.get('context') == 'data_collection':
-                        bee_count_response = json.loads(metrics_response.text)
+                        bee_count_response = json.loads(response.text)
                         data_type = mongo.data_types_collection.find_one({
                             'sensor_id': BEE_COUNTER_CAMERA_SENSOR_ID,
                             'data_type': 'bee_count'
@@ -255,15 +255,15 @@ def handle_camera_capture(data):
                         logger.info(f"Bee count from image analysis: {str(bee_count_data)}")
 
                         # Post metrics data
-                        metrics_response = http_session.post(
+                        response = http_session.post(
                             f'http://{API_HOST}:{API_PORT}/api/metrics',
                             json=bee_count_data,
                             timeout=(5, 30)
                         )
-                        logger.info(f"Metrics posted: {metrics_response.json()}")
+                        logger.info(f"Metrics posted: {response.json()}")
                 else:
-                    logger.error(f"Failed to upload image. Status code: {metrics_response.status_code}")
-                    logger.error(f"Response: {metrics_response.text}")
+                    logger.error(f"Failed to upload image. Status code: {response.status_code}")
+                    logger.error(f"Response: {response.text}")
 
             except requests.exceptions.ConnectionError as e:
                 logger.error(f"Connection error while uploading image: {e}")
@@ -281,7 +281,7 @@ def handle_camera_capture(data):
         with state_lock:
             camera_state['last_photo'] = filepath
 
-        metrics_response = {
+        response = {
             'success': True,
             'filename': filename,
             'filepath': filepath,
@@ -289,7 +289,7 @@ def handle_camera_capture(data):
         }
 
         if data.get('context') == 'harvest':
-            emit('camera:response', metrics_response)
+            emit('camera:response', response)
             broadcast_status_update('camera', camera_state.copy())
 
     except Exception as e:
