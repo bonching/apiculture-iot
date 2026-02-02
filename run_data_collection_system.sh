@@ -13,7 +13,7 @@ source /home/apiculture/py_env/bme280_venv/bin/activate
 cd /home/apiculture/apiculture-iot/
 
 # Run the Python script in the background with nohup for detachment
-nohup -u python3 /home/apiculture/apiculture-iot/apiculture_iot/data_collection.py > /home/apiculture/data_collection.log 2>&1 &
+nohup python3 -u /home/apiculture/apiculture-iot/apiculture_iot/data_collection.py > /home/apiculture/data_collection.log 2>&1 &
 
 cd ~
 
