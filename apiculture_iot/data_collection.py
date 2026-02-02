@@ -18,7 +18,7 @@ import adafruit_bme280.basic as adafruit_bme280
 
 from apiculture_iot.util.app_util import AppUtil
 from apiculture_iot.util.config import DATA_COLLECTION_METRICS, API_HOST, API_PORT, BEEHIVE_ID, \
-    DEFENSE_CAMERA_SENSOR_ID, BEE_COUNTER_CAMERA_SENSOR_ID, DATA_COLLECTION_PORT
+    DEFENSE_CAMERA_SENSOR_ID, BEE_COUNTER_CAMERA_SENSOR_ID, DATA_COLLECTION_WEBSOCKET_PORT
 
 util = AppUtil()
 
@@ -539,4 +539,4 @@ if __name__ == '__main__':
     # Execute data collection in a fixed interval (start as background thread)
     threading.Thread(target=execute_data_collection, daemon=True).start()
 
-    socketio.run(app, host='0.0.0.0', port=DATA_COLLECTION_PORT, debug=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=DATA_COLLECTION_WEBSOCKET_PORT, debug=False, allow_unsafe_werkzeug=True)
