@@ -324,7 +324,7 @@ def analyze_captured_images(captured_files):
             "details": {
                 "predatorDetectionMethod": response_with_threat.get('predator_analysis').get('details').get("description")
             },
-            "timestampMs": datetime.now(timezone.utc)
+            "timestampMs": datetime.now(timezone.utc).isoformat()
         }
 
         # Add contextual information if available
