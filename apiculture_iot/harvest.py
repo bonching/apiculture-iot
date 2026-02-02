@@ -40,6 +40,7 @@ Websocket Events:
 import subprocess
 import sys
 import traceback
+import logging
 
 from flask import Flask, request
 from flask_socketio import SocketIO, emit
@@ -52,6 +53,16 @@ import os
 from datetime import datetime
 
 from apiculture_iot.util.config import HARVEST_WEBSOCKET_PORT
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'apiculture-iot-secret-key'
@@ -68,8 +79,9 @@ PUMP_PIN = 24
 try:
     camera = Picamera2()
     camera_available = True
+    logger.info("Camera initialized successfully")
 except Exception as e:
-    print(f"Error initializing camera: {e}")
+    logger.error(f"Error initializing camera: {e}")
     camera = None
     camera_available = False
 
@@ -161,7 +173,7 @@ def handle_connect():
     client_id = request.sid
 
     connected_clients.add(client_id)
-    print(f"Client connected: {client_id} (Total clients: {len(connected_clients)})")
+    logger.info(f"Client connected: {client_id} (Total clients: {len(connected_clients)})")
 
     # Send welcome message with current device states
     emit('connected', {
@@ -194,7 +206,7 @@ def handle_disconnect():
     """Handle client disconnection"""
     client_id = request.sid
     connected_clients.remove(client_id)
-    print(f"Client disconnected: {client_id} (Total clients: {len(connected_clients)})")
+    logger.info(f"Client disconnected: {client_id} (Total clients: {len(connected_clients)})")
 
 
 @socketio.on('get:status')
@@ -241,7 +253,7 @@ def handle_get_health():
 def handle_needle_servo_angle(data):
     """Set needle servo to specified angle (for flipping needle to stand/lay down)"""
 
-    print("Needle servo:angle - ", data)
+    logger.info(f"Needle servo:angle - {data}")
 
     try:
         if not data or 'angle' not in data:
@@ -299,7 +311,7 @@ def handle_needle_servo_angle(data):
 def handle_needle_servo_rotate(data):
     """Control needle servo continuous rotation"""
 
-    print("Needle servo:rotate - ", data)
+    logger.info(f"Needle servo:rotate - {data}")
 
     try:
         if not data or 'direction' not in data:
@@ -367,7 +379,7 @@ def handle_needle_servo_rotate(data):
 def handle_pole_servo_angle(data):
     """Set pole servo to specific angle (for rotating pole)"""
 
-    print("Pole servo:angle - ", data)
+    logger.info(f"Pole servo:angle - {data}")
 
     try:
         if not data or 'angle' not in data:
@@ -419,7 +431,7 @@ def handle_pole_servo_angle(data):
 def handle_slider_servo_rotate(data):
     """Control slider servo continuous rotation"""
 
-    print("Slider servo:rotate - ", data)
+    logger.info(f"Slider servo:rotate - {data}")
 
     try:
         if not data or 'direction' not in data:
@@ -489,7 +501,7 @@ def handle_slider_servo_rotate(data):
 def handle_extruder_servo_rotate(data):
     """Control extruder servo continuous rotation"""
 
-    print("Extruder servo:rotate - ", data)
+    logger.info(f"Extruder servo:rotate - {data}")
 
     try:
         if not data or 'direction' not in data:
@@ -691,7 +703,7 @@ def handle_camera_video(data):
 def handle_smoker_control(data):
     """Control electric smoker"""
 
-    print("Smoker:control - ", data)
+    logger.info(f"Smoker:control - {data}")
 
     try:
         if not data or 'action' not in data:
@@ -772,7 +784,7 @@ def handle_smoker_control(data):
 def handle_pump_control(data):
     """Control peristaltic pump"""
 
-    print("Pump:control - ", data)
+    logger.info(f"Pump:control - {data}")
 
     try:
         if not data or 'action' not in data:
@@ -862,7 +874,7 @@ def cleanup():
             camera.stop_recording()
         except:
             pass
-    print('All devices stopped and cleaned up')
+    logger.info('All devices stopped and cleaned up')
 
 
 
@@ -873,17 +885,17 @@ if __name__ == '__main__':
     atexit.register(cleanup)
 
     def signal_handler(signal, frame):
-        print('Shutting down...')
+        logger.info('Shutting down...')
         cleanup()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    print("\n\n\n")
-    print("=" * 60)
-    print("Starting Apiculture IoT Websocket Control API...")
-    print("=" * 60)
-    print("\n\n\n")
+    logger.info("\n\n\n")
+    logger.info("=" * 60)
+    logger.info("Starting Apiculture IoT Websocket Control API...")
+    logger.info("=" * 60)
+    logger.info("\n\n\n")
 
     socketio.run(app, host='0.0.0.0', port=HARVEST_WEBSOCKET_PORT, debug=False, allow_unsafe_werkzeug=True)

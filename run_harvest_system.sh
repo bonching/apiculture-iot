@@ -13,7 +13,8 @@ source /home/apiculture/py_env/bme280_venv/bin/activate
 cd /home/apiculture/apiculture-iot/
 
 # Run the Python script in the background with nohup for detachment
-nohup python3 /home/apiculture/apiculture-iot/apiculture_iot/harvest.py > /home/apiculture/harvest.log 2>&1 &
+# -u flag disables Python output buffering for immediate log visibility
+nohup python3 -u /home/apiculture/apiculture-iot/apiculture_iot/harvest.py > /home/apiculture/harvest.log 2>&1 &
 
 cd ~
 
