@@ -14,8 +14,6 @@ Websocket Events:
     - needle_servo:rotate - Control needle servo rotation
     - pole_servo:angle - Set pole servo angle (rotate pole)
     - pole_servo:rotate - Control pole servo rotation
-    - camera:capture - Take a photo
-    - camera:video - Start/stop video
     - sliding_motor:control - Control sliding motor (horizontal movement)
     - sliding_motor:stop - Stop sliding motor
     - extruding_motor:control - Control extruding motor (vertical/extrusion)
@@ -29,7 +27,6 @@ Websocket Events:
     - status:update - Automatic status updates when devices change
     - needle_servo:response - Response to needle servo control commands
     - pole_servo:response - Response to pole servo control commands
-    - camera:response - Response to camera control commands
     - sliding_motor:response - Response to sliding motor control commands
     - extruding_motor:response - Response to extruding motor control commands
     - smoker:response - Response to smoker control commands
@@ -46,7 +43,6 @@ from flask import Flask, request
 from flask_socketio import SocketIO, emit
 from gpiozero import AngularServo, Motor, OutputDevice
 import RPi.GPIO as GPIO
-from picamera2 import Picamera2
 import threading
 import time
 import os
@@ -75,15 +71,6 @@ SLIDER_SERVO_PIN = 18
 EXTRUDER_SERVO_PIN = 27
 SMOKER_PIN = 23
 PUMP_PIN = 24
-
-try:
-    camera = Picamera2()
-    camera_available = True
-    logger.info("Camera initialized successfully")
-except Exception as e:
-    logger.error(f"Error initializing camera: {e}")
-    camera = None
-    camera_available = False
 
 # Storage directories
 PHOTO_DIR = "/home/apiculture/photos"
@@ -114,13 +101,6 @@ extruder_servo_state = {
     'angle': 0,
     'mode': 'stopped',
     'last_command': None
-}
-
-camera_state = {
-    'recording': False,
-    'last_photo': None,
-    'last_video': None,
-    'video_start_time': None
 }
 
 sliding_motor_state = {
@@ -183,7 +163,6 @@ def handle_connect():
         'devices': {
             'needle_servo': needle_servo_state.copy(),
             'pole_servo': pole_servo_state.copy(),
-            'camera': camera_state.copy(),
             'sliding_motor': sliding_motor_state.copy(),
             'extruding_motor': extruding_motor_state.copy(),
             'smoker': smoker_state.copy(),
@@ -192,7 +171,6 @@ def handle_connect():
         'device_availability': {
             'needle_servo': 'available',
             'pole_servo': 'available',
-            'camera': 'available' if camera_available else 'unavailable',
             'sliding_motor': 'available',
             'extruding_motor': 'available',
             'smoker': 'available',
@@ -218,7 +196,6 @@ def handle_get_status():
             'devices': {
                 'needle_servo': needle_servo_state.copy(),
                 'pole_servo': pole_servo_state.copy(),
-                'camera': camera_state.copy(),
                 'sliding_motor': sliding_motor_state.copy(),
                 'extruding_motor': extruding_motor_state.copy(),
                 'smoker': smoker_state.copy(),
@@ -238,7 +215,6 @@ def handle_get_health():
         'devices': {
             'needle_servo': 'available',
             'pole_servo': 'available',
-            'camera': 'available' if camera_available else 'unavailable',
             'sliding_motor': 'available',
             'extruding_motor': 'available',
             'smoker': 'available',
@@ -568,135 +544,6 @@ def handle_extruder_servo_rotate(data):
 
 
 
-# ============= Camera Websocket Handlers =============
-
-@socketio.on('camera:capture')
-def handle_camera_capture(data):
-    """Capture a photo"""
-    # if not camera_available:
-    #     emit('error', {'message': 'Camera is not available', 'device': 'camera'})
-    #     return
-
-    try:
-        data = data or {}
-        filename = data.get('filename', f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg')
-
-        if not filename.endswith(('.jpg', '.jpeg', '.png')):
-            filename += '.jpg'
-
-        filpath = os.path.join(PHOTO_DIR, filename)
-
-        # Configure and capture
-        # camera.start()
-        time.sleep(2)
-        # camera.capture_file(filpath)
-        # camera.stop()
-
-        with state_lock:
-            camera_state['last_photo'] = filpath
-
-        response = {
-            'success': True,
-            'filename': filename,
-            'filepath': filpath,
-            'message': f'Photo captured successfully'
-        }
-
-        emit('camera:response', response)
-        broadcast_status_update('camera', camera_state.copy())
-
-    except Exception as e:
-        emit('error', {'message': str(e), 'device': 'camera'})
-
-
-@socketio.on('camera:video')
-def handle_camera_video(data):
-    """Start/stop video recording"""
-    if not camera_available:
-        emit('error', {'message': 'Camera is not available', 'device': 'camera'})
-        return
-
-    try:
-        if not data or 'action' not in data:
-            emit('error', {'message': 'Missing action parameter', 'device': 'camera'})
-            return
-
-        action = data['action'].lower()
-
-        if action == 'start':
-            if camera_state['recording']:
-                emit('error', {'message': 'Camera is already recording', 'device': 'camera'})
-                return
-
-            duration = data.get('duration', None)
-            filename = data.get('filename', f'video_{datetime.now().strftime("%Y%m%d_%H%M%S")}.h264')
-
-            if not filename.endswith(('.h264', '.mp4')):
-                filename += '.h264'
-
-            filepath = os.path.join(VIDEO_DIR, filename)
-
-            # Start recording
-            camera.start_recording(filepath)
-
-            with state_lock:
-                camera_state['recording'] = True
-                camera_state['last_video'] = filepath
-                camera_state['video_start_time'] = time.time()
-
-            # Auto-stop if duration is specified
-            if duration and duration > 0:
-                def auto_stop_video():
-                    time.sleep(float(duration))
-                    if camera_state['recording']:
-                        camera.stop_recording()
-                        with state_lock:
-                            camera_state['recording'] = False
-                        broadcast_status_update('camera', camera_state.copy())
-
-                threading.Thread(target=auto_stop_video, daemon=True).start()
-                response = {
-                    'success': True,
-                    'filename': filename,
-                    'duration': duration,
-                    'message': f'Video recording started for {duration} seconds'
-                }
-            else:
-                response = {
-                    'success': True,
-                    'filename': filename,
-                    'message': f'Video recording started'
-                }
-
-            emit('camera:response', response)
-            broadcast_status_update('camera', camera_state.copy())
-
-        elif action == 'stop':
-            if not camera_state['recording']:
-                emit('error', {'message': 'Camera is not recording', 'device': 'camera'})
-                return
-
-            camera.stop_recording()
-
-            with state_lock:
-                camera_state['recording'] = False
-
-            response = {
-                'success': True,
-                'message': 'Video recording stopped'
-            }
-
-            emit('camera:response', response)
-            broadcast_status_update('camera', camera_state.copy())
-
-        else:
-            emit('error', {'message': f'Invalid action: {action}, action must be start or stop', 'device': 'camera'})
-
-    except Exception as e:
-        emit('error', {'message': str(e), 'device': 'camera'})
-
-
-
 # ============= Electric Smoker Websocket Handlers =============
 
 @socketio.on('smoker:control')
@@ -868,12 +715,6 @@ def cleanup():
     # GPIO.output(SMOKER_PIN, GPIO.LOW)
     # GPIO.output(PUMP_PIN, GPIO.LOW)
     GPIO.cleanup()
-
-    if camera_available and camera_state['recording']:
-        try:
-            camera.stop_recording()
-        except:
-            pass
     logger.info('All devices stopped and cleaned up')
 
 
