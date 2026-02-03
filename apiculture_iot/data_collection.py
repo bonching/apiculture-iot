@@ -174,7 +174,10 @@ def handle_camera_capture(data):
 
     try:
         data = data or {}
-        filename = data.get('filename', f'data_collection_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg')
+        if data.get('context') == 'data_collection':
+            filename = data.get('filename', f'data_collection_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg')
+        else:
+            filename = data.get('filename', f'harvest_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg')
 
         if not filename.endswith(('.jpg', '.jpeg', '.png')):
             filename += '.jpg'
@@ -231,6 +234,7 @@ def handle_camera_capture(data):
                     data=data,
                     timeout=(10, 60)  # (connect timeout, read timeout) in seconds
                 )
+                image_response = json.loads(response.text)
 
                 # Check the response
                 if response.status_code in (200, 201):
@@ -239,7 +243,6 @@ def handle_camera_capture(data):
 
                     # Process bee count if this is a data collection context
                     if data.get('context') == 'data_collection':
-                        bee_count_response = json.loads(response.text)
                         data_type = mongo.data_types_collection.find_one({
                             'sensor_id': BEE_COUNTER_CAMERA_SENSOR_ID,
                             'data_type': 'bee_count'
@@ -248,19 +251,19 @@ def handle_camera_capture(data):
                         bee_count_data = [{
                             'datetime': datetime.now(timezone.utc).isoformat(timespec='milliseconds'),
                             'dataTypeId': util.objectid_to_str(data_type['_id']),
-                            'value': int(bee_count_response.get('bee_count').get('count')),
-                            'imageId': bee_count_response.get('imageId')
+                            'value': int(image_response.get('bee_count').get('count')),
+                            'imageId': image_response.get('imageId')
                         }]
 
                         logger.info(f"Bee count from image analysis: {str(bee_count_data)}")
 
                         # Post metrics data
-                        response = http_session.post(
+                        metrics_response = http_session.post(
                             f'http://{API_HOST}:{API_PORT}/api/metrics',
                             json=bee_count_data,
                             timeout=(5, 30)
                         )
-                        logger.info(f"Metrics posted: {response.json()}")
+                        logger.info(f"Metrics posted: {metrics_response.json()}")
                 else:
                     logger.error(f"Failed to upload image. Status code: {response.status_code}")
                     logger.error(f"Response: {response.text}")
@@ -285,6 +288,7 @@ def handle_camera_capture(data):
             'success': True,
             'filename': filename,
             'filepath': filepath,
+            'imageId': image_response.get('imageId'),
             'message': f'Photo captured successfully' if camera_available else 'Fallback image used (camera is unavailable)'
         }
 
