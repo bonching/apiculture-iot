@@ -194,7 +194,10 @@ def handle_camera_capture(data):
         else:
             # Use random fallback image from bees folder when camera is unavailable
             logger.warning("Camera is unavailable, using random fallback image from bees folder")
-            bees_dir = os.path.join(PROJECT_ROOT, 'images', 'bees')
+            if data.get('context') == 'data_collection':
+                bees_dir = os.path.join(PROJECT_ROOT, 'images', 'bees')
+            else:
+                bees_dir = os.path.join(PROJECT_ROOT, 'images', 'honeypots')
 
             if os.path.exists(bees_dir):
                 # Get all image files from bees directory
