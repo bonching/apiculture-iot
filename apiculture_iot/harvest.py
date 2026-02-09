@@ -48,7 +48,8 @@ import time
 import os
 from datetime import datetime
 
-from apiculture_iot.util.config import HARVEST_WEBSOCKET_PORT
+from apiculture_iot.util.config import HARVEST_WEBSOCKET_PORT, HARVEST_NEEDLE_SERVO_PIN, HARVEST_POLE_SERVO_PIN, \
+    HARVEST_SLIDER_SERVO_PIN, HARVEST_EXTRUDER_SERVO_PIN, HARVEST_SMOKER_PIN, HARVEST_PUMP_PIN
 
 # Configure logging
 logging.basicConfig(
@@ -65,12 +66,12 @@ app.config['SECRET_KEY'] = 'apiculture-iot-secret-key'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # GPIO Pin Configuration
-NEEDLE_SERVO_PIN = 17
-POLE_SERVO_PIN = 22
-SLIDER_SERVO_PIN = 18
-EXTRUDER_SERVO_PIN = 27
-SMOKER_PIN = 23
-PUMP_PIN = 24
+NEEDLE_SERVO_PIN = HARVEST_NEEDLE_SERVO_PIN
+POLE_SERVO_PIN = HARVEST_POLE_SERVO_PIN
+SLIDER_SERVO_PIN = HARVEST_SLIDER_SERVO_PIN
+EXTRUDER_SERVO_PIN = HARVEST_EXTRUDER_SERVO_PIN
+SMOKER_PIN = HARVEST_SMOKER_PIN
+PUMP_PIN = HARVEST_PUMP_PIN
 
 # Storage directories
 PHOTO_DIR = "/home/apiculture/photos"

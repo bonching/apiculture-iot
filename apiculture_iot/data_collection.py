@@ -18,7 +18,8 @@ import adafruit_bme280.basic as adafruit_bme280
 
 from apiculture_iot.util.app_util import AppUtil
 from apiculture_iot.util.config import DATA_COLLECTION_METRICS, API_HOST, API_PORT, BEEHIVE_ID, \
-    DEFENSE_CAMERA_SENSOR_ID, BEE_COUNTER_CAMERA_SENSOR_ID, DATA_COLLECTION_WEBSOCKET_PORT
+    DEFENSE_CAMERA_SENSOR_ID, BEE_COUNTER_CAMERA_SENSOR_ID, DATA_COLLECTION_WEBSOCKET_PORT, DATA_COLLECTION_INTERVAL, \
+    DATA_COLLECTION_SERVO_PIN, DATA_COLLECTION_BME280_I2C_ADDRESS
 
 util = AppUtil()
 
@@ -40,15 +41,14 @@ logger = logging.getLogger('data_collection')
 logger.setLevel(logging.INFO)
 
 
-DATA_COLLECTION_INTERVAL = 60*1
 IMAGE_API_URL = f'http://{API_HOST}:{API_PORT}/api/images'
 SENSOR_DATA_API_URL = f'http://{API_HOST}:{API_PORT}/api/metrics'
 
 #GPIO Configuration
-SERVO_PIN = 12
+SERVO_PIN = DATA_COLLECTION_SERVO_PIN
 
 # BME280 Configuration
-BME280_I2C_ADDRESS = 0x77 # Default I2C address for BME280 (use 0x77 if needed)
+BME280_I2C_ADDRESS = DATA_COLLECTION_BME280_I2C_ADDRESS
 
 # Storage directories
 PHOTO_DIR = "/home/apiculture/photos"

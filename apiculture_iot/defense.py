@@ -25,7 +25,7 @@ import shutil
 
 from apiculture_iot.data_collection import mongo, util
 from apiculture_iot.util.config import API_HOST, API_PORT, DEFENSE_CHECK_INTERVAL, WATER_SPRINKLER_DURATION, \
-    DEFENSE_CAMERA_SENSOR_ID
+    DEFENSE_CAMERA_SENSOR_ID, DEFENSE_SPRINKLER_PIN, DEFENSE_CAMERA_SERVO_PIN
 from apiculture_iot.util.http_client import http_session, make_request
 
 # Setup logging
@@ -46,8 +46,8 @@ DEFENSE_API_URL = f'http://{API_HOST}:{API_PORT}/api/images'
 ALERT_API_URL = f'http://{API_HOST}:{API_PORT}/api/alerts'
 
 # GPIO Configuration
-SPRINKLER_PIN = 23
-CAMERA_SERVO_PIN = 22
+SPRINKLER_PIN = DEFENSE_SPRINKLER_PIN
+CAMERA_SERVO_PIN = DEFENSE_CAMERA_SERVO_PIN
 
 # Servo and capture configuration
 SERVO_MIN_ANGLE = 0
